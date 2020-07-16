@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "agile.jpa.enable",
+      "type": "java.lang.String",
+      "description": "Agile JPA 组件开关",
+      "defaultValue": true
+    }
+  ]
+}
