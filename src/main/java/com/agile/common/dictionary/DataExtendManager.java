@@ -7,7 +7,7 @@ package com.agile.common.dictionary;
  * @version 1.0
  * @since 1.0
  */
-public interface DictionaryManager {
+public interface DataExtendManager {
     /**
      * 字典转换工具
      * @param o 转换前的对象

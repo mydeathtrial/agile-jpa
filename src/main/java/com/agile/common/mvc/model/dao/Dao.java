@@ -1,6 +1,6 @@
 package com.agile.common.mvc.model.dao;
 
-import com.agile.common.dictionary.DictionaryManager;
+import com.agile.common.dictionary.DataExtendManager;
 import com.agile.common.exception.NoSuchIDException;
 import com.agile.common.util.SqlUtil;
 import com.agile.common.util.clazz.ClassUtil;
@@ -54,7 +54,7 @@ public class Dao {
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
-    private DictionaryManager dictionaryManager;
+    private DataExtendManager dictionaryManager;
 
     /**
      * 根据java类型获取对应的数据库表的JpaRepository对象

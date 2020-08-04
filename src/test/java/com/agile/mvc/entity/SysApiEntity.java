@@ -1,5 +1,6 @@
 package com.agile.mvc.entity;
 
+import com.agile.common.annotation.Dictionary;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -31,6 +32,8 @@ public class SysApiEntity implements Serializable {
     private Long sysApiId;
     private String name;
     private Boolean type;
+    @Dictionary(fieldName = "type",isFull = true,dicCode = "type")
+    private String typeText;
     private String businessName;
     private String businessCode;
     private String remarks;

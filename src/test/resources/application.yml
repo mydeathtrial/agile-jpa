@@ -61,8 +61,6 @@ spring:
           merge-sql: true
         config:
           enabled: true
-        print:
-          enabled: true
         commons-log:
           enabled: true
           data-source-log-enabled: false
@@ -171,4 +169,6 @@ spring:
             auto: update
 agile:
   jpa:
+    enable: true
+  dictionary:
     enable: true

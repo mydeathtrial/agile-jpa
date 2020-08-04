@@ -1,8 +1,11 @@
 package com.agile;
 
+import com.agile.common.dictionary.DictionaryDataManagerProxy;
+import com.agile.common.dictionary.MemoryDictionaryData;
 import com.agile.mvc.entity.SysApiEntity;
 import com.agile.common.mvc.model.dao.Dao;
 import com.alibaba.fastjson.JSON;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -27,6 +30,17 @@ import java.util.Map;
 @SpringBootTest(classes = App.class)
 public class TestTask {
     private final Logger logger = LoggerFactory.getLogger(TestTask.class);
+
+    @Autowired
+    private DictionaryDataManagerProxy manager;
+
+
+    @Before
+    public void init() {
+        manager.add(new MemoryDictionaryData("1", null, "状态", "type"));
+        manager.add(new MemoryDictionaryData("2", "1", "对", "1"));
+        manager.add(new MemoryDictionaryData("3", "1", "错", "0"));
+    }
 
     @Autowired
     private Dao dao;
