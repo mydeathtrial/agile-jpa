@@ -1,17 +1,17 @@
-package com.agile.common.mvc.model.dao;
+package cloud.agileframework.jpa.dao;
 
-import com.agile.common.dictionary.DataExtendManager;
-import com.agile.common.exception.NoSuchIDException;
-import com.agile.common.util.SqlUtil;
-import com.agile.common.util.clazz.ClassUtil;
-import com.agile.common.util.clazz.TypeReference;
-import com.agile.common.util.object.ObjectUtil;
-import com.agile.common.util.string.StringUtil;
+import cloud.agileframework.common.util.clazz.ClassUtil;
+import cloud.agileframework.common.util.clazz.TypeReference;
+import cloud.agileframework.common.util.object.ObjectUtil;
+import cloud.agileframework.common.util.string.StringUtil;
+import cloud.agileframework.jpa.dictionary.DataExtendManager;
+import cloud.agileframework.sql.SqlUtil;
 import com.alibaba.druid.sql.ast.statement.SQLSelectOrderByItem;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.id.IdentifierGenerationException;
 import org.hibernate.query.internal.NativeQueryImpl;
 import org.hibernate.transform.ResultTransformer;
 import org.hibernate.transform.Transformers;
@@ -240,11 +240,11 @@ public class Dao {
      * @param o   表映射实体类型的对象
      * @param <T> 表映射实体类型的对象
      * @return 返回更新后的数据
-     * @throws NoSuchIDException      异常
-     * @throws IllegalAccessException 异常
+     * @throws IdentifierGenerationException 异常
+     * @throws IllegalAccessException        异常
      */
     @SuppressWarnings("unchecked")
-    public <T> T updateOfNotNull(T o) throws NoSuchIDException, IllegalAccessException {
+    public <T> T updateOfNotNull(T o) throws IdentifierGenerationException, IllegalAccessException {
         Class<T> clazz = (Class<T>) o.getClass();
         Field idField = getIdField(clazz);
         idField.setAccessible(true);
@@ -310,9 +310,9 @@ public class Dao {
      * @param <T>        查询的目标表对应实体类型
      * @param <ID>       查询的目标表对应实体主键类型
      * @return 结果集
-     * @throws NoSuchIDException tableClass实体类型中没有找到@ID的注解，识别成主键字段
+     * @throws IdentifierGenerationException tableClass实体类型中没有找到@ID的注解，识别成主键字段
      */
-    private <T, ID> List<T> createObjectList(Class<T> tableClass, ID[] ids) throws NoSuchIDException {
+    private <T, ID> List<T> createObjectList(Class<T> tableClass, ID[] ids) throws IdentifierGenerationException {
         ArrayList<T> list = new ArrayList<>();
         Field idField = getIdField(tableClass);
         for (ID id : ids) {
@@ -328,7 +328,7 @@ public class Dao {
         return list;
     }
 
-    private Object getId(Object o) throws NoSuchIDException, IllegalAccessException {
+    private Object getId(Object o) throws IdentifierGenerationException, IllegalAccessException {
         return getIdField(o.getClass()).get(o);
     }
 
@@ -337,9 +337,9 @@ public class Dao {
      *
      * @param clazz 查询的目标表对应实体类型，Entity
      * @return 主键属性
-     * @throws NoSuchIDException tableClass实体类型中没有找到@ID的注解，识别成主键字段
+     * @throws IdentifierGenerationException tableClass实体类型中没有找到@ID的注解，识别成主键字段
      */
-    public Field getIdField(Class<?> clazz) throws NoSuchIDException {
+    public Field getIdField(Class<?> clazz) throws IdentifierGenerationException {
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
             method.setAccessible(true);
@@ -352,7 +352,7 @@ public class Dao {
                 } catch (RuntimeException e) {
                     e.printStackTrace();
                 } catch (Exception e) {
-                    throw new NoSuchIDException();
+                    throw new IdentifierGenerationException(clazz.getCanonicalName() + "not fount id column");
                 }
             }
         }
@@ -365,7 +365,7 @@ public class Dao {
                 return field;
             }
         }
-        throw new NoSuchIDException();
+        throw new IdentifierGenerationException(clazz.getCanonicalName() + "not fount id column");
     }
 
     /**
@@ -405,7 +405,7 @@ public class Dao {
         for (T obj : list) {
             try {
                 getRepository(obj.getClass()).deleteById(getId(obj));
-            } catch (NoSuchIDException | IllegalAccessException e) {
+            } catch (IdentifierGenerationException | IllegalAccessException e) {
                 e.printStackTrace();
             }
         }

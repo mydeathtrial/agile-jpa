@@ -1,17 +1,19 @@
 package com.agile.mvc.entity;
 
-import com.agile.common.annotation.Dictionary;
+import cloud.agileframework.dictionary.annotation.Dictionary;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Persistent;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.io.Serializable;
 
 /**
@@ -72,5 +74,10 @@ public class SysApiEntity implements Serializable {
     @Column(name = "remarks", length = 255)
     public String getRemarks() {
         return remarks;
+    }
+
+    @Transient
+    public String getTypeText() {
+        return typeText;
     }
 }

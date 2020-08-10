@@ -1,9 +1,9 @@
 package com.agile;
 
-import com.agile.common.dictionary.DictionaryDataManagerProxy;
-import com.agile.common.dictionary.MemoryDictionaryData;
+import cloud.agileframework.dictionary.DictionaryDataManagerProxy;
+import cloud.agileframework.dictionary.MemoryDictionaryData;
 import com.agile.mvc.entity.SysApiEntity;
-import com.agile.common.mvc.model.dao.Dao;
+import cloud.agileframework.jpa.dao.Dao;
 import com.alibaba.fastjson.JSON;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,7 +17,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author 佟盟

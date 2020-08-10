@@ -1,7 +1,7 @@
-package com.autoconfig;
+package cloud.agileframework.jpa.config;
 
-import com.agile.common.dictionary.DataExtendManager;
-import com.agile.common.mvc.model.dao.Dao;
+import cloud.agileframework.jpa.dao.Dao;
+import cloud.agileframework.jpa.dictionary.DataExtendManager;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -16,10 +16,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties("agile.jpa")
 @ConditionalOnProperty(prefix = "agile.jpa", name = "enable")
-@AutoConfigureAfter(DataSourceAutoConfiguration.class)
+@AutoConfigureAfter({DataSourceAutoConfiguration.class, DictionaryAutoConfiguration.class})
 public class DaoAutoConfiguration {
-    public DaoAutoConfiguration() {
-    }
 
     @Bean
     @ConditionalOnMissingBean
