@@ -22,13 +22,21 @@ JPA风格的Do类对象操作形式分页与原生SQL形式分页均返回统一
 您可以从[最新稳定版本]下载包(https://github.com/mydeathtrial/agile-jpa/releases).
 该包已上传至maven中央仓库，可在pom中直接声明引用
 
-以版本agile-jpa-0.1.jar为例。
+以版本agile-jpa-2.0.0.jar为例。
 #### 步骤 2: 添加maven依赖
 ```xml
+<!--声明中央仓库-->
+<repositories>
+    <repository>
+        <id>cent</id>
+        <url>https://repo1.maven.org/maven2/</url>
+    </repository>
+</repositories>
+<!--声明依赖-->
 <dependency>
     <groupId>cloud.agileframework</groupId>
     <artifactId>agile-jpa</artifactId>
-    <version>0.1</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 #### 步骤 3: 开箱即用，由于API众多，本文只介绍常用方法，更多方法请查看javadoc
