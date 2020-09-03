@@ -380,8 +380,10 @@ public class Dao {
             return;
         }
         SimpleJpaRepository<T, Object> repository = getRepository(tableClass);
+        Class<?> idType = getEntityManager().getMetamodel().entity(tableClass).getIdType().getJavaType();
+
         for (Object id : ids) {
-            repository.deleteById(id);
+            repository.deleteById(ObjectUtil.to(id, new TypeReference<>(idType)));
         }
     }
 
@@ -390,8 +392,10 @@ public class Dao {
             return;
         }
         SimpleJpaRepository<T, Object> repository = getRepository(tableClass);
+        Class<?> idType = getEntityManager().getMetamodel().entity(tableClass).getIdType().getJavaType();
+
         for (Object id : ids) {
-            repository.deleteById(id);
+            repository.deleteById(ObjectUtil.to(id, new TypeReference<>(idType)));
         }
     }
 
