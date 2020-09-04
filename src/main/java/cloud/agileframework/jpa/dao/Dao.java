@@ -380,7 +380,7 @@ public class Dao {
             return;
         }
         SimpleJpaRepository<T, Object> repository = getRepository(tableClass);
-        Class<?> idType = getEntityManager().getMetamodel().entity(tableClass).getIdType().getJavaType();
+        Class<?> idType = getIdType(tableClass);
 
         for (Object id : ids) {
             repository.deleteById(ObjectUtil.to(id, new TypeReference<>(idType)));
@@ -392,7 +392,7 @@ public class Dao {
             return;
         }
         SimpleJpaRepository<T, Object> repository = getRepository(tableClass);
-        Class<?> idType = getEntityManager().getMetamodel().entity(tableClass).getIdType().getJavaType();
+        Class<?> idType = getIdType(tableClass);
 
         for (Object id : ids) {
             repository.deleteById(ObjectUtil.to(id, new TypeReference<>(idType)));
@@ -416,6 +416,27 @@ public class Dao {
     }
 
     /**
+     * 根据ORM类型取主键类型
+     *
+     * @param clazz 主键java类型
+     * @return 主键java类型
+     */
+    private Class<?> getIdType(Class<?> clazz) {
+        return getEntityManager().getMetamodel().entity(clazz).getIdType().getJavaType();
+    }
+
+    /**
+     * 把id转换为clazz实体的主键类型
+     *
+     * @param clazz 实体类型
+     * @param id    主键
+     * @return 转换后的主键
+     */
+    private Object toIdType(Class<?> clazz, Object id) {
+        return ObjectUtil.to(id, new TypeReference<>(getIdType(clazz)));
+    }
+
+    /**
      * 根据主键，查询单条
      *
      * @param clazz 查询的目标表对应实体类型，Entity
@@ -424,7 +445,7 @@ public class Dao {
      * @return clazz类型对象
      */
     public <T> T findOne(Class<T> clazz, Object id) {
-        T e = getEntityManager().find(clazz, id);
+        T e = getEntityManager().find(clazz, toIdType(clazz, id));
         dictionaryManager.cover(e);
         return e;
     }
@@ -460,7 +481,7 @@ public class Dao {
         queryCoverMap(query);
         List<?> result = query.getResultList();
 
-        if (result.size() == 0) {
+        if (result.isEmpty()) {
             return null;
         }
         if (result.size() != 1) {
