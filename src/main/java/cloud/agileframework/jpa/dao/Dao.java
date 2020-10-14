@@ -8,6 +8,7 @@ import cloud.agileframework.jpa.dictionary.DataExtendManager;
 import cloud.agileframework.sql.SqlUtil;
 import com.alibaba.druid.sql.ast.statement.SQLSelectOrderByItem;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.engine.spi.SessionImplementor;
@@ -31,6 +32,7 @@ import javax.persistence.Id;
 import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -477,7 +479,8 @@ public class Dao {
      */
     @SuppressWarnings("unchecked")
     public <T> T findOne(String sql, Class<T> clazz, Object... parameters) {
-        Query query = creatQuery(sql, parameters);
+        Query query = creatQuery(false, sql, parameters);
+
         queryCoverMap(query);
         List<?> result = query.getResultList();
 
@@ -493,25 +496,7 @@ public class Dao {
         return e;
     }
 
-    /**
-     * 根据sql查询出单条数据，并映射成指定clazz类型
-     *
-     * @param <T>        查询的表的映射实体类型
-     * @param sql        原生sql，使用{Map的key值}形式占位
-     * @param clazz      查询的目标表对应实体类型，Entity
-     * @param parameters Map形式参数集合
-     * @return 查询的结果
-     */
-    public <T> T findOne(String sql, Class<T> clazz, Object parameters) {
-        if (parameters != null && (canCastClass(parameters.getClass()) || parameters.getClass().isArray() || parameters instanceof Collection)) {
-            return findOne(sql, clazz, new Object[]{parameters});
-        }
-        T e = findOne(SqlUtil.parserSQL(sql, parameters), clazz);
-        dictionaryManager.cover(e);
-        return e;
-    }
-
-    public static boolean canCastClass(Class<?> clazz) {
+    private static boolean canCastClass(Class<?> clazz) {
         if (ClassUtil.isWrapOrPrimitive(clazz)) {
             return true;
         }
@@ -627,6 +612,14 @@ public class Dao {
         }
     }
 
+    public <T> List<T> findAll(String sql, Class<T> clazz){
+        return findAll(sql,clazz,null,null);
+    }
+
+    public <T> List<T> findAll(String sql, Object... parameters){
+        return findAll(sql,null,null,null, parameters);
+    }
+
     /**
      * 根据sql语句查询指定类型clazz列表
      *
@@ -640,7 +633,7 @@ public class Dao {
      */
     @SuppressWarnings("unchecked")
     public <T> List<T> findAll(String sql, Class<T> clazz, Integer firstResult, Integer maxResults, Object... parameters) {
-        Query query = creatQuery(sql, parameters);
+        Query query = creatQuery(false, sql, parameters);
         queryCoverMap(query);
         if (firstResult != null) {
             query.setFirstResult(firstResult);
@@ -650,7 +643,7 @@ public class Dao {
         }
         List<Map<String, Object>> list = query.getResultList();
 
-        if (list != null && list.size() > 0) {
+        if (list != null && !list.isEmpty()) {
             List<T> result = new ArrayList<>();
             if (canCastClass(clazz)) {
                 for (Map<String, Object> entity : list) {
@@ -673,35 +666,6 @@ public class Dao {
         return new ArrayList<>(0);
     }
 
-    /**
-     * 根据sql语句查询指定类型clazz列表
-     *
-     * @param sql        查询的sql语句，参数使用？占位
-     * @param clazz      希望查询结果映射成的实体类型
-     * @param <T>        指定返回类型
-     * @param parameters 对象数组类型的参数集合
-     * @return 结果集
-     */
-    public <T> List<T> findAll(String sql, Class<T> clazz, Object... parameters) {
-        return findAll(sql, clazz, null, null, parameters);
-    }
-
-    /**
-     * 根据sql查询结果为List<clazz>类型的结果集
-     *
-     * @param sql        查询sql语句，使用{Map的key值}形式占位
-     * @param clazz      查询结果需要映射的实体
-     * @param parameters Map类型参数集合
-     * @param <T>        查询结果需要映射的实体类型
-     * @return 类型的结果集
-     */
-    public <T> List<T> findAll(String sql, Class<T> clazz, Object parameters) {
-        if (parameters != null && (canCastClass(parameters.getClass()) || parameters.getClass().isArray() || parameters instanceof Collection)) {
-            return findAll(sql, clazz, null, null, parameters);
-        }
-        return findAll(SqlUtil.parserSQL(sql, parameters), clazz);
-    }
-
     public static void validatePageInfo(int page, int size) throws IllegalArgumentException {
         if (size < 1) {
             throw new IllegalArgumentException("每页显示条数最少为数字 1");
@@ -715,14 +679,13 @@ public class Dao {
      * 分页查询
      *
      * @param sql        查询的sql语句
-     * @param countSql   统计总数的sql语句
      * @param page       第几页
      * @param size       页大小
      * @param parameters 对象数组类型的参数集合
      * @return Page类型的查询结果
      */
     @SuppressWarnings("unchecked")
-    public <T> Page<T> findPageBySQL(String sql, String countSql, int page, int size, Class<T> clazz, Object... parameters) {
+    public <T> Page<T> findPageBySQL(String sql, int page, int size, Class<T> clazz, Object... parameters) {
         validatePageInfo(page, size);
         PageImpl<T> pageDate = null;
         PageRequest pageable;
@@ -750,13 +713,13 @@ public class Dao {
             }
         }
 
-        if (sorts.size() > 0) {
+        if (!sorts.isEmpty()) {
             pageable = PageRequest.of(page - 1, size, Sort.by(sorts));
         } else {
             pageable = PageRequest.of(page - 1, size, Sort.unsorted());
         }
 
-        Query countQuery = creatQuery(countSql, parameters);
+        Query countQuery = creatQuery(true, sql, parameters);
         int count = Integer.parseInt(countQuery.getSingleResult().toString());
 
         //取查询结果集
@@ -765,7 +728,7 @@ public class Dao {
             if (clazz != null) {
                 content = findAll(sql, clazz, (page - 1) * size, size, parameters);
             } else {
-                Query query = creatQuery(sql, parameters);
+                Query query = creatQuery(false, sql, parameters);
                 query.setFirstResult((page - 1) * size);
                 query.setMaxResults(size);
                 queryCoverMap(query);
@@ -781,125 +744,65 @@ public class Dao {
     }
 
     /**
-     * 分页查询，自动生成条数汇总sql语句
-     *
-     * @param sql        原生sql，参数使用{Map的key值}形式占位
-     * @param page       第几页
-     * @param size       页大小
-     * @param parameters Map类型参数集合
-     * @return 分页Page类型结果
-     */
-    public Page<Map<String, Object>> findPageBySQL(String sql, int page, int size, Object parameters) {
-        if (parameters != null && (canCastClass(parameters.getClass()) || parameters.getClass().isArray() || parameters instanceof Collection)) {
-            return findPageBySQL(sql, SqlUtil.parserCountSQL(sql), page, size, null, parameters);
-        }
-        return findPageBySQL(SqlUtil.parserSQL(sql, parameters), SqlUtil.parserCountSQL(sql, parameters), page, size, null);
-    }
-
-    /**
-     * 分页查询，自动生成条数汇总sql语句
-     *
-     * @param sql        原生sql，参数使用?形式占位
-     * @param page       第几页
-     * @param size       页大小
-     * @param parameters 对象数组类型参数集合
-     * @return 分页Page类型结果
-     */
-    public Page<Map<String, Object>> findPageBySQL(String sql, int page, int size, Object... parameters) {
-        return findPageBySQL(sql, SqlUtil.parserCountSQL(sql), page, size, null, parameters);
-    }
-
-    /**
-     * 分页查询，自动生成条数汇总sql语句
-     *
-     * @param sql        原生sql，参数使用{Map的key值}形式占位
-     * @param page       第几页
-     * @param size       页大小
-     * @param parameters Map类型参数集合
-     * @return 分页Page类型结果
-     */
-    public <T> Page<T> findPageBySQL(String sql, int page, int size, Class<T> clazz, Object... parameters) {
-        return findPageBySQL(sql, SqlUtil.parserCountSQL(sql), page, size, clazz, parameters);
-    }
-
-    /**
-     * 分页查询，自动生成条数汇总sql语句
-     *
-     * @param sql        原生sql，参数使用{Map的key值}形式占位
-     * @param page       第几页
-     * @param size       页大小
-     * @param parameters Map类型参数集合
-     * @return 分页Page类型结果
-     */
-    public <T> Page<T> findPageBySQL(String sql, int page, int size, Class<T> clazz, Object parameters) {
-        if (parameters != null && (canCastClass(parameters.getClass()) || parameters.getClass().isArray() || parameters instanceof Collection)) {
-            return findPageBySQL(sql, SqlUtil.parserCountSQL(sql), page, size, clazz, parameters);
-        }
-        return findPageBySQL(SqlUtil.parserSQL(sql, parameters), SqlUtil.parserCountSQL(sql, parameters), page, size, clazz);
-    }
-
-    /**
      * 创建普通查询的Query对象
      *
      * @param sql        sql语句
      * @param parameters 对象数组形式参数集合
      * @return 完成设置参数的Query对象
      */
-    private Query creatQuery(String sql, Object... parameters) {
-        Query query = getEntityManager().createNativeQuery(sql);
-        if (parameters != null) {
-            setParameter(query, parameters);
-        }
-        return query;
-    }
-
-    /**
-     * 创建返回结果为clazz的Query对象
-     *
-     * @param sql        sql语句
-     * @param clazz      返回结果类型
-     * @param parameters 对象数组形式参数集合
-     * @return 完成设置参数的Query对象
-     */
-    private Query creatClassQuery(String sql, Class<?> clazz, Object... parameters) {
-        Query query = getEntityManager().createNativeQuery(sql, clazz);
-        if (parameters != null) {
-            setParameter(query, parameters);
-        }
-        return query;
-    }
-
-    /**
-     * 设置查询参数
-     *
-     * @param query      query对象
-     * @param parameters 参数集合
-     */
-    private void setParameter(Query query, Object... parameters) {
+    private Query creatQuery(boolean isCount, String sql, Object... parameters) {
+        Query query;
         if (parameters == null) {
-            return;
+            return getEntityManager().createNativeQuery(sql);
         }
-        for (int i = 0; i < parameters.length; i++) {
-            query.setParameter(i + 1, parameters[i]);
-        }
-    }
 
-    /**
-     * 根据sql语句查询列表，结果类型为List<Map<String, Object>>
-     *
-     * @param sql        查询的sql语句，参数使用？占位
-     * @param parameters 对象数组形式参数集合
-     * @return 结果类型为List套Map的查询结果
-     */
-    @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> findAllBySQL(String sql, Object... parameters) {
-        Query query = creatQuery(sql, parameters);
-        queryCoverMap(query);
-        List<Map<String, Object>> result = query.getResultList();
-        if (result != null) {
-            return result;
+        if (parameters.length == 1) {
+            Object p = parameters[0];
+            if (canCastClass(p.getClass())) {
+                query = getEntityManager().createNativeQuery(sql);
+                query.setParameter(0, p);
+            } else if (p.getClass().isArray()) {
+                query = getEntityManager().createNativeQuery(sql);
+                for (int i = 0; i < Array.getLength(p); i++) {
+                    query.setParameter(i + 1, Array.get(p, i));
+                }
+            } else if (Collection.class.isAssignableFrom(p.getClass())) {
+                query = getEntityManager().createNativeQuery(sql);
+                int i = 0;
+                for (Object parameter : (Collection<Object>) p) {
+                    query.setParameter(i++, parameter);
+                }
+            } else {
+                Map<String, Object> map = Maps.newHashMap();
+
+                if (isCount) {
+                    sql = SqlUtil.parserCountSQL(sql, p, map);
+                } else {
+                    sql = SqlUtil.parserSQL(sql, p, map);
+                }
+                query = getEntityManager().createNativeQuery(sql);
+                try {
+                    for (Map.Entry<String, Object> e : map.entrySet()) {
+                        query.setParameter(e.getKey(), e.getValue());
+                    }
+                }catch (Exception e){
+                    throw new RuntimeException(sql,e);
+                }
+
+
+            }
+        } else {
+            if (isCount) {
+                query = getEntityManager().createNativeQuery(SqlUtil.parserCountSQL(sql));
+            } else {
+                query = getEntityManager().createNativeQuery(sql);
+            }
+
+            for (int i = 0; i < parameters.length; i++) {
+                query.setParameter(i + 1, parameters[i]);
+            }
         }
-        return new ArrayList<>(0);
+        return query;
     }
 
     /**
@@ -909,30 +812,26 @@ public class Dao {
      * @param parameters Map类型参数集合
      * @return 结果类型为List套Map的查询结果
      */
-    public List<Map<String, Object>> findAllBySQL(String sql, Object parameters) {
-        if (parameters != null && (canCastClass(parameters.getClass()) || parameters.getClass().isArray() || parameters instanceof Collection)) {
-            return findAllBySQL(sql, new Object[]{parameters});
+    public List<Map<String, Object>> findAllBySQL(String sql, Object... parameters) {
+        Query query = creatQuery(false, sql, parameters);
+        queryCoverMap(query);
+        List<Map<String, Object>> result = query.getResultList();
+        if (result != null) {
+            return result;
         }
-        return findAllBySQL(SqlUtil.parserSQL(sql, parameters));
-    }
-
-    public Map<String, Object> findOneToMap(String sql, Object parameters) {
-        if (parameters != null && (canCastClass(parameters.getClass()) || parameters.getClass().isArray() || parameters instanceof Collection)) {
-            return findOneToMap(sql, new Object[]{parameters});
-        }
-        return findOneToMap(SqlUtil.parserSQL(sql, parameters));
+        return new ArrayList<>(0);
     }
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> findOneToMap(String sql, Object... parameters) {
-        Query query = creatQuery(sql, parameters);
+        Query query = creatQuery(false, sql, parameters);
         queryCoverMap(query);
         return (Map<String, Object>) getSingleResult(query, sql);
     }
 
     private Object getSingleResult(Query query, String sql) {
         List<?> list = query.getResultList();
-        if (list.size() == 0) {
+        if (list.isEmpty()) {
             return null;
         } else if (list.size() > 1) {
             throw new NonUniqueResultException(String.format("Call to stored procedure [%s] returned multiple results", sql));
@@ -949,22 +848,8 @@ public class Dao {
      * @return 结果为一个查询字段值
      */
     public Object findParameter(String sql, Object... parameters) {
-        Query query = creatQuery(sql, parameters);
+        Query query = creatQuery(false, sql, parameters);
         return getSingleResult(query, sql);
-    }
-
-    /**
-     * 查询结果预判为一个字段值
-     *
-     * @param sql        查询sql语句，参数使用{Map的key值}形式占位
-     * @param parameters Map类型参数集合
-     * @return 结果为一个查询字段值
-     */
-    public Object findParameter(String sql, Object parameters) {
-        if (parameters != null && (canCastClass(parameters.getClass()) || parameters.getClass().isArray() || parameters instanceof Collection)) {
-            return findParameter(sql, new Object[]{parameters});
-        }
-        return findParameter(SqlUtil.parserSQL(sql, parameters));
     }
 
     /**
@@ -975,22 +860,8 @@ public class Dao {
      * @return 影响条数
      */
     public int updateBySQL(String sql, Object... parameters) {
-        Query query = creatQuery(sql, parameters);
+        Query query = creatQuery(false, sql, parameters);
         return query.executeUpdate();
-    }
-
-    /**
-     * sql形式写操作
-     *
-     * @param sql        查询sql语句，参数使用{Map的key值}形式占位
-     * @param parameters Map类型参数集合
-     * @return 影响条数
-     */
-    public int updateBySQL(String sql, Object parameters) {
-        if (parameters != null && (canCastClass(parameters.getClass()) || parameters.getClass().isArray() || parameters instanceof Collection)) {
-            return updateBySQL(sql, new Object[]{parameters});
-        }
-        return updateBySQL(SqlUtil.parserSQL(sql, parameters));
     }
 
     /**

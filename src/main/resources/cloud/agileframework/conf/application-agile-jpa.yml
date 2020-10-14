@@ -6,7 +6,7 @@ spring:
       ddl-auto: none
       naming:
         implicit-strategy: org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
         use_sql_comments: false
@@ -166,3 +166,7 @@ spring:
           result-set-log-error-enabled: false
           result-set-next-after-log-enabled: false
           result-set-open-after-log-enabled: false
+logging:
+  level: debug
+    org.hibernate: debug
+    com.zaxxer.hikari: debug

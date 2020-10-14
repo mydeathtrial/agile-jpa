@@ -1,4 +1,6 @@
 spring:
+  jpa:
+    show-sql: true
   datasource:
     # 使用阿里的Druid连接池
     driver-class-name: com.mysql.cj.jdbc.Driver
