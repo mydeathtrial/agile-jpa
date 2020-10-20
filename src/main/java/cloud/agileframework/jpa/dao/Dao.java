@@ -1,9 +1,9 @@
 package cloud.agileframework.jpa.dao;
 
+import cloud.agileframework.common.util.clazz.ClassInfo;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.object.ObjectUtil;
-import cloud.agileframework.common.util.string.StringUtil;
 import cloud.agileframework.jpa.dictionary.DataExtendManager;
 import cloud.agileframework.sql.SqlUtil;
 import com.alibaba.druid.sql.ast.statement.SQLSelectOrderByItem;
@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -28,10 +29,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 
 import javax.persistence.EntityManager;
-import javax.persistence.Id;
 import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.metamodel.EntityType;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -194,7 +195,7 @@ public class Dao {
      * @return 是否存在
      */
     public boolean existsById(Class<?> tableClass, Object id) {
-        return getRepository(tableClass).existsById(id);
+        return getRepository(tableClass).existsById(toIdType(tableClass,id));
     }
 
     /**
@@ -246,7 +247,7 @@ public class Dao {
      * @throws IllegalAccessException        异常
      */
     @SuppressWarnings("unchecked")
-    public <T> T updateOfNotNull(T o) throws IdentifierGenerationException, IllegalAccessException {
+    public <T> T updateOfNotNull(T o) throws IllegalAccessException {
         Class<T> clazz = (Class<T>) o.getClass();
         Field idField = getIdField(clazz);
         idField.setAccessible(true);
@@ -276,7 +277,7 @@ public class Dao {
      */
     public <T> boolean deleteById(Class<T> tableClass, Object id) {
         try {
-            getRepository(tableClass).deleteById(id);
+            getRepository(tableClass).deleteById(toIdType(tableClass,id));
         } catch (EmptyResultDataAccessException ignored) {
             return false;
         }
@@ -302,72 +303,6 @@ public class Dao {
      */
     public <T> void deleteAllInBatch(Class<T> tableClass) {
         getRepository(tableClass).deleteAllInBatch();
-    }
-
-    /**
-     * 根据表映射的实体类型与主键值集合，创建一个只包含主键值的空的对象集合
-     *
-     * @param tableClass 查询的目标表对应实体类型，Entity
-     * @param ids        主键数组
-     * @param <T>        查询的目标表对应实体类型
-     * @param <ID>       查询的目标表对应实体主键类型
-     * @return 结果集
-     * @throws IdentifierGenerationException tableClass实体类型中没有找到@ID的注解，识别成主键字段
-     */
-    private <T, ID> List<T> createObjectList(Class<T> tableClass, ID[] ids) throws IdentifierGenerationException {
-        ArrayList<T> list = new ArrayList<>();
-        Field idField = getIdField(tableClass);
-        for (ID id : ids) {
-            try {
-                T instance = tableClass.newInstance();
-                idField.setAccessible(true);
-                idField.set(instance, ObjectUtil.to(id, new TypeReference<>(idField.getType())));
-                list.add(instance);
-            } catch (IllegalAccessException | InstantiationException e) {
-                logger.error("主键数组转换ORM对象列表失败", e);
-            }
-        }
-        return list;
-    }
-
-    private Object getId(Object o) throws IdentifierGenerationException, IllegalAccessException {
-        return getIdField(o.getClass()).get(o);
-    }
-
-    /**
-     * 获取ORM中的主键字段
-     *
-     * @param clazz 查询的目标表对应实体类型，Entity
-     * @return 主键属性
-     * @throws IdentifierGenerationException tableClass实体类型中没有找到@ID的注解，识别成主键字段
-     */
-    public Field getIdField(Class<?> clazz) throws IdentifierGenerationException {
-        Method[] methods = clazz.getDeclaredMethods();
-        for (Method method : methods) {
-            method.setAccessible(true);
-            Id id = method.getAnnotation(Id.class);
-            if (!ObjectUtils.isEmpty(id)) {
-                try {
-                    Field field = clazz.getDeclaredField(StringUtil.toLowerName(method.getName().replaceFirst("get", "")));
-                    field.setAccessible(true);
-                    return field;
-                } catch (RuntimeException e) {
-                    e.printStackTrace();
-                } catch (Exception e) {
-                    throw new IdentifierGenerationException(clazz.getCanonicalName() + "not fount id column");
-                }
-            }
-        }
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            field.setAccessible(true);
-            Id id = field.getAnnotation(Id.class);
-            if (!ObjectUtils.isEmpty(id)) {
-                field.setAccessible(true);
-                return field;
-            }
-        }
-        throw new IdentifierGenerationException(clazz.getCanonicalName() + "not fount id column");
     }
 
     /**
@@ -418,27 +353,6 @@ public class Dao {
     }
 
     /**
-     * 根据ORM类型取主键类型
-     *
-     * @param clazz 主键java类型
-     * @return 主键java类型
-     */
-    private Class<?> getIdType(Class<?> clazz) {
-        return getEntityManager().getMetamodel().entity(clazz).getIdType().getJavaType();
-    }
-
-    /**
-     * 把id转换为clazz实体的主键类型
-     *
-     * @param clazz 实体类型
-     * @param id    主键
-     * @return 转换后的主键
-     */
-    private Object toIdType(Class<?> clazz, Object id) {
-        return ObjectUtil.to(id, new TypeReference<>(getIdType(clazz)));
-    }
-
-    /**
      * 根据主键，查询单条
      *
      * @param clazz 查询的目标表对应实体类型，Entity
@@ -463,7 +377,22 @@ public class Dao {
     public <T> T findOne(T object) {
         Example<T> example = Example.of(object);
         Class<T> clazz = (Class<T>) object.getClass();
-        T e = (T) this.getRepository(clazz).findOne(example).orElse(null);
+        T e = this.getRepository(clazz).findOne(example).orElse(null);
+        dictionaryManager.cover(e);
+        return e;
+    }
+
+    /**
+     * 按照例子查询单条
+     *
+     * @param <T>    查询的表的映射实体类型
+     * @param object 查询一句的例子对象
+     * @return 返回查询结果
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T findOne(T object, ExampleMatcher matcher) {
+        Class<T> clazz = (Class<T>) object.getClass();
+        T e = this.getRepository(clazz).findOne(Example.of(object, matcher)).orElse(null);
         dictionaryManager.cover(e);
         return e;
     }
@@ -481,26 +410,19 @@ public class Dao {
     public <T> T findOne(String sql, Class<T> clazz, Object... parameters) {
         Query query = creatQuery(false, sql, parameters);
 
-        queryCoverMap(query);
-        List<?> result = query.getResultList();
-
-        if (result.isEmpty()) {
-            return null;
+        if(!canCastClass(clazz)){
+            queryCoverMap(query);
+            Map<String, Object> o = (Map<String, Object>) getSingleResult(query, sql);
+            if (Map.class.isAssignableFrom(clazz)) {
+                return (T) o;
+            }
+            T e = ObjectUtil.to(o, new TypeReference<>(clazz));
+            dictionaryManager.cover(e);
+            return e;
+        }else{
+            Object o = getSingleResult(query, sql);
+            return ObjectUtil.to(o, new TypeReference<>(clazz));
         }
-        if (result.size() != 1) {
-            throw new NonUniqueResultException(String.format("Call to stored procedure [%s] returned multiple results", sql));
-        }
-        Map<String, Object> o = (Map<String, Object>) result.get(0);
-        T e = ObjectUtil.to(o, new TypeReference<>(clazz));
-        dictionaryManager.cover(e);
-        return e;
-    }
-
-    private static boolean canCastClass(Class<?> clazz) {
-        if (ClassUtil.isWrapOrPrimitive(clazz)) {
-            return true;
-        }
-        return String.class == clazz || BigDecimal.class == clazz || Date.class == clazz;
     }
 
     /**
@@ -511,9 +433,11 @@ public class Dao {
      * @return 查询结果数据集合
      */
     public <T> List<T> findAll(T object) {
-        List<T> list = findAll(object, Sort.unsorted());
-        dictionaryManager.cover(list);
-        return list;
+        return findAll(object, Sort.unsorted());
+    }
+
+    public <T> List<T> findAll(T object, Sort sort) {
+        return findAll(object, ExampleMatcher.matching(), sort);
     }
 
     /**
@@ -525,35 +449,10 @@ public class Dao {
      * @return 查询结果数据集合
      */
     @SuppressWarnings("unchecked")
-    public <T> List<T> findAll(T object, Sort sort) {
-        Example<T> example = Example.of(object);
+    public <T> List<T> findAll(T object, ExampleMatcher matcher, Sort sort) {
+        Example<T> example = Example.of(object, matcher);
         Class<T> clazz = (Class<T>) object.getClass();
         List<T> result = this.getRepository(clazz).findAll(example, sort);
-        dictionaryManager.cover(result);
-        return result;
-    }
-
-    /**
-     * 根据例子查询列表
-     *
-     * @param example 例子
-     * @param <T>     泛型
-     * @return 列表
-     */
-    public <T> List<T> findAllByExample(Example<T> example) {
-        return findAllByExample(example, Sort.unsorted());
-    }
-
-    /**
-     * 根据例子查询列表
-     *
-     * @param example 例子
-     * @param sort    排序
-     * @param <T>     泛型
-     * @return 列表
-     */
-    public <T> List<T> findAllByExample(Example<T> example, Sort sort) {
-        List<T> result = this.getRepository(example.getProbeType()).findAll(example, sort);
         dictionaryManager.cover(result);
         return result;
     }
@@ -567,9 +466,23 @@ public class Dao {
      * @param size   每页条数
      * @return 分页对象
      */
-    public <T> Page<T> findAll(T object, int page, int size) {
-        return findAll(object, page, size, Sort.unsorted());
+    public <T> Page<T> page(T object, int page, int size) {
+        return page(object, page, size, Sort.unsorted());
     }
+
+    /**
+     * 按照例子查询多条分页
+     *
+     * @param <T>    查询的表的映射实体类型
+     * @param object 例子对象
+     * @param page   第几页
+     * @param size   每页条数
+     * @return 分页对象
+     */
+    public <T> Page<T> page(T object, ExampleMatcher matcher,int page, int size) {
+        return page(object, matcher, PageRequest.of(page - 1, size, Sort.unsorted()));
+    }
+
 
     /**
      * 按照例子对象查询多条分页
@@ -581,98 +494,41 @@ public class Dao {
      * @param sort   排序对象
      * @return 分页信息
      */
-    public <T> Page<T> findAll(T object, int page, int size, Sort sort) {
-        validatePageInfo(page, size);
-        return findAll(object, PageRequest.of(page - 1, size, sort));
+    public <T> Page<T> page(T object, int page, int size, Sort sort) {
+        return page(object, ExampleMatcher.matching(), PageRequest.of(page - 1, size, sort));
     }
 
     @SuppressWarnings("unchecked")
-    public <T> Page<T> findAll(T object, PageRequest pageRequest) {
+    public <T> Page<T> page(T object,ExampleMatcher matcher, PageRequest pageRequest) {
+        validatePageInfo(pageRequest.getPageNumber(), pageRequest.getPageSize());
         if (object instanceof Class) {
             return this.getRepository((Class<T>) object).findAll(pageRequest);
         }
-        Example<T> example = Example.of(object);
+        Example<T> example = Example.of(object,matcher);
         Class<T> clazz = (Class<T>) object.getClass();
         Page<T> page = this.getRepository(clazz).findAll(example, pageRequest);
         dictionaryManager.cover(page.getContent());
         return page;
     }
 
-    private void queryCoverMap(Query query) {
-        if (query instanceof NativeQueryImpl) {
-            ((NativeQueryImpl<?>) query).setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP);
-        } else if (Proxy.isProxyClass(query.getClass())) {
-            try {
-                String setResultTransformer = "setResultTransformer";
-                Method method = NativeQueryImpl.class.getDeclaredMethod(setResultTransformer, ResultTransformer.class);
-                Proxy.getInvocationHandler(query).invoke(query, method, new Object[]{Transformers.ALIAS_TO_ENTITY_MAP});
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public <T> List<T> findAll(String sql, Class<T> clazz){
-        return findAll(sql,clazz,null,null);
-    }
-
-    public <T> List<T> findAll(String sql, Object... parameters){
-        return findAll(sql,null,null,null, parameters);
+    public <T> Page<T> page(T object, PageRequest pageRequest){
+        return page(object, ExampleMatcher.matching(), pageRequest);
     }
 
     /**
-     * 根据sql语句查询指定类型clazz列表
+     * 查询指定tableClass对应表的全表分页
      *
-     * @param sql         查询的sql语句，参数使用？占位
-     * @param clazz       希望查询结果映射成的实体类型
-     * @param <T>         指定返回类型
-     * @param firstResult 第一条数据
-     * @param maxResults  最大条数据
-     * @param parameters  对象数组类型的参数集合
-     * @return 结果集
+     * @param tableClass 查询的目标表对应实体类型，Entity
+     * @param page       第几页
+     * @param size       页大小
+     * @param <T>        目标表对应实体类型
+     * @return 内容为实体的Page类型分页结果
      */
-    @SuppressWarnings("unchecked")
-    public <T> List<T> findAll(String sql, Class<T> clazz, Integer firstResult, Integer maxResults, Object... parameters) {
-        Query query = creatQuery(false, sql, parameters);
-        queryCoverMap(query);
-        if (firstResult != null) {
-            query.setFirstResult(firstResult);
-        }
-        if (maxResults != null) {
-            query.setMaxResults(maxResults);
-        }
-        List<Map<String, Object>> list = query.getResultList();
-
-        if (list != null && !list.isEmpty()) {
-            List<T> result = new ArrayList<>();
-            if (canCastClass(clazz)) {
-                for (Map<String, Object> entity : list) {
-                    T node = ObjectUtil.to(entity.values().toArray()[entity.values().size() - 1], new TypeReference<>(clazz));
-                    if (node != null) {
-                        result.add(node);
-                    }
-                }
-            } else {
-                for (Map<String, Object> entity : list) {
-                    T node = ObjectUtil.to(entity, new TypeReference<>(clazz));
-                    if (node != null) {
-                        result.add(node);
-                    }
-                }
-            }
-            dictionaryManager.cover(result);
-            return result;
-        }
-        return new ArrayList<>(0);
-    }
-
-    public static void validatePageInfo(int page, int size) throws IllegalArgumentException {
-        if (size < 1) {
-            throw new IllegalArgumentException("每页显示条数最少为数字 1");
-        }
-        if (page < 1) {
-            throw new IllegalArgumentException("最小页为数字 1");
-        }
+    public <T> Page<T> pageByClass(Class<T> tableClass, int page, int size) {
+        validatePageInfo(page, size);
+        Page<T> pageInfo = getRepository(tableClass).findAll(PageRequest.of(page - 1, size));
+        dictionaryManager.cover(pageInfo.getContent());
+        return pageInfo;
     }
 
     /**
@@ -685,7 +541,7 @@ public class Dao {
      * @return Page类型的查询结果
      */
     @SuppressWarnings("unchecked")
-    public <T> Page<T> findPageBySQL(String sql, int page, int size, Class<T> clazz, Object... parameters) {
+    public <T> Page<T> pageBySQL(String sql, int page, int size, Class<T> clazz, Object... parameters) {
         validatePageInfo(page, size);
         PageImpl<T> pageDate = null;
         PageRequest pageable;
@@ -726,7 +582,7 @@ public class Dao {
         if (count >= 0) {
             List<T> content;
             if (clazz != null) {
-                content = findAll(sql, clazz, (page - 1) * size, size, parameters);
+                content = findBySQL(sql, clazz, (page - 1) * size, size, parameters);
             } else {
                 Query query = creatQuery(false, sql, parameters);
                 query.setFirstResult((page - 1) * size);
@@ -741,6 +597,193 @@ public class Dao {
         }
 
         return pageDate;
+    }
+
+    /**
+     * 指定tableClass对应表的全表查询
+     *
+     * @param tableClass 查询的目标表对应实体类型，Entity
+     * @param <T>        目标表对应实体类型
+     * @return 内容为实体的List类型结果集
+     */
+    public <T> List<T> findAllByClass(Class<T> tableClass) {
+        List<T> result = getRepository(tableClass).findAll();
+        dictionaryManager.cover(result);
+        return result;
+    }
+
+    /**
+     * 指定tableClass对应表的全表查询,并排序
+     *
+     * @param tableClass 查询的目标表对应实体类型，Entity
+     * @param sort       排序信息
+     * @param <T>        目标表对应实体类型
+     * @return 内容为实体的List类型结果集
+     */
+    public <T> List<T> findAllByClass(Class<T> tableClass, Sort sort) {
+        List<T> result = getRepository(tableClass).findAll(sort);
+        dictionaryManager.cover(result);
+        return result;
+    }
+
+    public <T> List<T> findBySQL(String sql, Class<T> clazz) {
+        return findBySQL(sql, clazz, null, null);
+    }
+
+    /**
+     * 根据sql语句查询指定类型clazz列表
+     *
+     * @param sql         查询的sql语句，参数使用？占位
+     * @param clazz       希望查询结果映射成的实体类型
+     * @param <T>         指定返回类型
+     * @param firstResult 第一条数据
+     * @param maxResults  最大条数据
+     * @param parameters  对象数组类型的参数集合
+     * @return 结果集
+     */
+    @SuppressWarnings("unchecked")
+    public <T> List<T> findBySQL(String sql, Class<T> clazz, Integer firstResult, Integer maxResults, Object... parameters) {
+        Query query = creatQuery(false, sql, parameters);
+        queryCoverMap(query);
+        if (firstResult != null) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != null) {
+            query.setMaxResults(maxResults);
+        }
+        List<Map<String, Object>> list = query.getResultList();
+
+        if (list != null && !list.isEmpty()) {
+            List<T> result = new ArrayList<>();
+            if (canCastClass(clazz)) {
+                for (Map<String, Object> entity : list) {
+                    T node = ObjectUtil.to(entity.values().toArray()[entity.values().size() - 1], new TypeReference<>(clazz));
+                    if (node != null) {
+                        result.add(node);
+                    }
+                }
+            } else {
+                for (Map<String, Object> entity : list) {
+                    T node = ObjectUtil.to(entity, new TypeReference<>(clazz));
+                    if (node != null) {
+                        result.add(node);
+                    }
+                }
+            }
+            dictionaryManager.cover(result);
+            return result;
+        }
+        return new ArrayList<>(0);
+    }
+
+    /**
+     * 根据sql语句查询列表，结果类型为List<Map<String, Object>>
+     *
+     * @param sql        查询sql语句，参数使用{Map的key值}形式占位
+     * @param parameters Map类型参数集合
+     * @return 结果类型为List套Map的查询结果
+     */
+    public List<Map<String, Object>> findBySQL(String sql, Object... parameters) {
+        Query query = creatQuery(false, sql, parameters);
+        queryCoverMap(query);
+        List<Map<String, Object>> result = query.getResultList();
+        if (result != null) {
+            return result;
+        }
+        return new ArrayList<>(0);
+    }
+
+    /**
+     * 根据表映射的实体类型与主键值集合，创建一个只包含主键值的空的对象集合
+     *
+     * @param tableClass 查询的目标表对应实体类型，Entity
+     * @param ids        主键数组
+     * @param <T>        查询的目标表对应实体类型
+     * @param <ID>       查询的目标表对应实体主键类型
+     * @return 结果集
+     * @throws IdentifierGenerationException tableClass实体类型中没有找到@ID的注解，识别成主键字段
+     */
+    private <T, ID> List<T> createObjectList(Class<T> tableClass, ID[] ids) throws IdentifierGenerationException {
+        ArrayList<T> list = new ArrayList<>();
+        Field idField = getIdField(tableClass);
+        for (ID id : ids) {
+            try {
+                T instance = tableClass.newInstance();
+                idField.setAccessible(true);
+                idField.set(instance, ObjectUtil.to(id, new TypeReference<>(idField.getType())));
+                list.add(instance);
+            } catch (IllegalAccessException | InstantiationException e) {
+                logger.error("主键数组转换ORM对象列表失败", e);
+            }
+        }
+        return list;
+    }
+
+
+    /**
+     * 获取ORM中的主键字段
+     *
+     * @param clazz 查询的目标表对应实体类型，Entity
+     * @return 主键属性
+     * @throws IdentifierGenerationException tableClass实体类型中没有找到@ID的注解，识别成主键字段
+     */
+    private Field getIdField(Class<?> clazz) {
+        final EntityType<?> entityInfo = getEntityManager().getMetamodel().entity(clazz);
+        return ClassInfo.getCache(clazz).getField(entityInfo.getId(entityInfo.getIdType().getJavaType()).getName());
+    }
+
+    private Object getId(Object o) throws IllegalAccessException {
+        return getIdField(o.getClass()).get(o);
+    }
+    /**
+     * 根据ORM类型取主键类型
+     *
+     * @param clazz 主键java类型
+     * @return 主键java类型
+     */
+    private Class<?> getIdType(Class<?> clazz) {
+        return getEntityManager().getMetamodel().entity(clazz).getIdType().getJavaType();
+    }
+
+    /**
+     * 把id转换为clazz实体的主键类型
+     *
+     * @param clazz 实体类型
+     * @param id    主键
+     * @return 转换后的主键
+     */
+    private Object toIdType(Class<?> clazz, Object id) {
+        return ObjectUtil.to(id, new TypeReference<>(getIdType(clazz)));
+    }
+
+    private static boolean canCastClass(Class<?> clazz) {
+        if (ClassUtil.isWrapOrPrimitive(clazz)) {
+            return true;
+        }
+        return String.class == clazz || BigDecimal.class == clazz || Date.class == clazz;
+    }
+
+    private void queryCoverMap(Query query) {
+        if (query instanceof NativeQueryImpl) {
+            ((NativeQueryImpl<?>) query).setResultTransformer(Transformers.ALIAS_TO_ENTITY_MAP);
+        } else if (Proxy.isProxyClass(query.getClass())) {
+            try {
+                String setResultTransformer = "setResultTransformer";
+                Method method = NativeQueryImpl.class.getDeclaredMethod(setResultTransformer, ResultTransformer.class);
+                Proxy.getInvocationHandler(query).invoke(query, method, new Object[]{Transformers.ALIAS_TO_ENTITY_MAP});
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void validatePageInfo(int page, int size) throws IllegalArgumentException {
+        if (size < 1) {
+            throw new IllegalArgumentException("每页显示条数最少为数字 1");
+        }
+        if (page < 1) {
+            throw new IllegalArgumentException("最小页为数字 1");
+        }
     }
 
     /**
@@ -785,8 +828,8 @@ public class Dao {
                     for (Map.Entry<String, Object> e : map.entrySet()) {
                         query.setParameter(e.getKey(), e.getValue());
                     }
-                }catch (Exception e){
-                    throw new RuntimeException(sql,e);
+                } catch (Exception e) {
+                    throw new RuntimeException(sql, e);
                 }
 
 
@@ -805,29 +848,6 @@ public class Dao {
         return query;
     }
 
-    /**
-     * 根据sql语句查询列表，结果类型为List<Map<String, Object>>
-     *
-     * @param sql        查询sql语句，参数使用{Map的key值}形式占位
-     * @param parameters Map类型参数集合
-     * @return 结果类型为List套Map的查询结果
-     */
-    public List<Map<String, Object>> findAllBySQL(String sql, Object... parameters) {
-        Query query = creatQuery(false, sql, parameters);
-        queryCoverMap(query);
-        List<Map<String, Object>> result = query.getResultList();
-        if (result != null) {
-            return result;
-        }
-        return new ArrayList<>(0);
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> findOneToMap(String sql, Object... parameters) {
-        Query query = creatQuery(false, sql, parameters);
-        queryCoverMap(query);
-        return (Map<String, Object>) getSingleResult(query, sql);
-    }
 
     private Object getSingleResult(Query query, String sql) {
         List<?> list = query.getResultList();
@@ -838,18 +858,6 @@ public class Dao {
         } else {
             return list.get(0);
         }
-    }
-
-    /**
-     * 查询结果预判为一个字段值
-     *
-     * @param sql        查询的sql语句，参数使用？占位
-     * @param parameters 对象数组形式参数集合
-     * @return 结果为一个查询字段值
-     */
-    public Object findParameter(String sql, Object... parameters) {
-        Query query = creatQuery(false, sql, parameters);
-        return getSingleResult(query, sql);
     }
 
     /**
@@ -892,48 +900,6 @@ public class Dao {
         return result;
     }
 
-    /**
-     * 查询指定tableClass对应表的全表分页
-     *
-     * @param tableClass 查询的目标表对应实体类型，Entity
-     * @param page       第几页
-     * @param size       页大小
-     * @param <T>        目标表对应实体类型
-     * @return 内容为实体的Page类型分页结果
-     */
-    public <T> Page<T> findAll(Class<T> tableClass, int page, int size) {
-        validatePageInfo(page, size);
-        Page<T> pageInfo = getRepository(tableClass).findAll(PageRequest.of(page - 1, size));
-        dictionaryManager.cover(pageInfo.getContent());
-        return pageInfo;
-    }
-
-    /**
-     * 指定tableClass对应表的全表查询
-     *
-     * @param tableClass 查询的目标表对应实体类型，Entity
-     * @param <T>        目标表对应实体类型
-     * @return 内容为实体的List类型结果集
-     */
-    public <T> List<T> findAll(Class<T> tableClass) {
-        List<T> result = getRepository(tableClass).findAll();
-        dictionaryManager.cover(result);
-        return result;
-    }
-
-    /**
-     * 指定tableClass对应表的全表查询,并排序
-     *
-     * @param tableClass 查询的目标表对应实体类型，Entity
-     * @param sort       排序信息
-     * @param <T>        目标表对应实体类型
-     * @return 内容为实体的List类型结果集
-     */
-    public <T> List<T> findAll(Class<T> tableClass, Sort sort) {
-        List<T> result = getRepository(tableClass).findAll(sort);
-        dictionaryManager.cover(result);
-        return result;
-    }
 
     /**
      * 查询指定tableClass对应表的总数

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.springframework.data.annotation.Persistent;
 
 import javax.persistence.Basic;
@@ -21,6 +22,7 @@ import java.io.Serializable;
  *
  * @author agile gennerator
  */
+@ToString
 @Setter
 @Builder
 @AllArgsConstructor

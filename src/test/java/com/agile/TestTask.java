@@ -68,14 +68,20 @@ public class TestTask {
 
     @Test
     public void query(){
-        List<SysApiEntity> list = dao.findAll("select * from sys_api", SysApiEntity.class);
+        List<SysApiEntity> list = dao.findBySQL("select * from sys_api", SysApiEntity.class);
         logger.info(JSON.toJSONString(list,true));
     }
 
     @Test
     public void page(){
-        Page<SysApiEntity> list = dao.findPageBySQL("select * from sys_api", 1, 10, SysApiEntity.class);
+        Page<SysApiEntity> list = dao.pageBySQL("select * from sys_api", 1, 10, SysApiEntity.class);
         logger.info(JSON.toJSONString(list,true));
+    }
+
+    @Test
+    public void findOne(){
+        SysApiEntity s = dao.findOne("select 1 as name,1 as type", SysApiEntity.class);
+        System.out.println(s);
     }
 
     private static final Map<String, Object> param;
@@ -117,12 +123,13 @@ public class TestTask {
                 "where a.del_flag = 0 and ad.del_flag = 0 and a.dept_id in ({deptName}) " +
                 "and a.asset_id in ({businessName:'assss'}) and a.business_code LIKE concat('%',{h.0},'%') and a.foura_flag = '{fouraFlag}' order by a.update_time desc ";
 
-        dao.findAllBySQL(sql,param);
+        dao.findBySQL(sql,param);
+//        dao.findBySQL()
     }
 
     @Test
     public void query3(){
-        dao.findAll(SysApiEntity.class);
+        dao.findAllByClass(SysApiEntity.class);
     }
 
     private SysApiEntity create(){
