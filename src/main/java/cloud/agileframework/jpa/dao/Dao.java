@@ -195,7 +195,7 @@ public class Dao {
      * @return 是否存在
      */
     public boolean existsById(Class<?> tableClass, Object id) {
-        return getRepository(tableClass).existsById(toIdType(tableClass,id));
+        return getRepository(tableClass).existsById(toIdType(tableClass, id));
     }
 
     /**
@@ -277,7 +277,7 @@ public class Dao {
      */
     public <T> boolean deleteById(Class<T> tableClass, Object id) {
         try {
-            getRepository(tableClass).deleteById(toIdType(tableClass,id));
+            getRepository(tableClass).deleteById(toIdType(tableClass, id));
         } catch (EmptyResultDataAccessException ignored) {
             return false;
         }
@@ -410,7 +410,7 @@ public class Dao {
     public <T> T findOne(String sql, Class<T> clazz, Object... parameters) {
         Query query = creatQuery(false, sql, parameters);
 
-        if(!canCastClass(clazz)){
+        if (!canCastClass(clazz)) {
             queryCoverMap(query);
             Map<String, Object> o = (Map<String, Object>) getSingleResult(query, sql);
             if (Map.class.isAssignableFrom(clazz)) {
@@ -419,7 +419,7 @@ public class Dao {
             T e = ObjectUtil.to(o, new TypeReference<>(clazz));
             dictionaryManager.cover(e);
             return e;
-        }else{
+        } else {
             Object o = getSingleResult(query, sql);
             return ObjectUtil.to(o, new TypeReference<>(clazz));
         }
@@ -479,7 +479,7 @@ public class Dao {
      * @param size   每页条数
      * @return 分页对象
      */
-    public <T> Page<T> page(T object, ExampleMatcher matcher,int page, int size) {
+    public <T> Page<T> page(T object, ExampleMatcher matcher, int page, int size) {
         return page(object, matcher, PageRequest.of(page - 1, size, Sort.unsorted()));
     }
 
@@ -499,19 +499,18 @@ public class Dao {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> Page<T> page(T object,ExampleMatcher matcher, PageRequest pageRequest) {
-        validatePageInfo(pageRequest.getPageNumber(), pageRequest.getPageSize());
+    public <T> Page<T> page(T object, ExampleMatcher matcher, PageRequest pageRequest) {
         if (object instanceof Class) {
             return this.getRepository((Class<T>) object).findAll(pageRequest);
         }
-        Example<T> example = Example.of(object,matcher);
+        Example<T> example = Example.of(object, matcher);
         Class<T> clazz = (Class<T>) object.getClass();
         Page<T> page = this.getRepository(clazz).findAll(example, pageRequest);
         dictionaryManager.cover(page.getContent());
         return page;
     }
 
-    public <T> Page<T> page(T object, PageRequest pageRequest){
+    public <T> Page<T> page(T object, PageRequest pageRequest) {
         return page(object, ExampleMatcher.matching(), pageRequest);
     }
 
@@ -525,7 +524,6 @@ public class Dao {
      * @return 内容为实体的Page类型分页结果
      */
     public <T> Page<T> pageByClass(Class<T> tableClass, int page, int size) {
-        validatePageInfo(page, size);
         Page<T> pageInfo = getRepository(tableClass).findAll(PageRequest.of(page - 1, size));
         dictionaryManager.cover(pageInfo.getContent());
         return pageInfo;
@@ -542,7 +540,6 @@ public class Dao {
      */
     @SuppressWarnings("unchecked")
     public <T> Page<T> pageBySQL(String sql, int page, int size, Class<T> clazz, Object... parameters) {
-        validatePageInfo(page, size);
         PageImpl<T> pageDate = null;
         PageRequest pageable;
 
@@ -735,6 +732,7 @@ public class Dao {
     private Object getId(Object o) throws IllegalAccessException {
         return getIdField(o.getClass()).get(o);
     }
+
     /**
      * 根据ORM类型取主键类型
      *
@@ -774,15 +772,6 @@ public class Dao {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    private static void validatePageInfo(int page, int size) throws IllegalArgumentException {
-        if (size < 1) {
-            throw new IllegalArgumentException("每页显示条数最少为数字 1");
-        }
-        if (page < 1) {
-            throw new IllegalArgumentException("最小页为数字 1");
         }
     }
 
