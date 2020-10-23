@@ -11,6 +11,8 @@ spring:
       hibernate:
         use_sql_comments: false
         format_sql: true
+        connection:
+          autocommit: false
         cache:
           region_prefix: hibernate
           use_second_level_cache: false
