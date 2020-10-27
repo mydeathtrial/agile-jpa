@@ -9,6 +9,8 @@ spring:
     show-sql: true
     properties:
       hibernate:
+        hbm2ddl:
+          auto: none
         use_sql_comments: false
         format_sql: true
         connection:
@@ -18,8 +20,6 @@ spring:
           use_second_level_cache: false
           use_query_cache: false
           use_structured_entries: false
-          hbm2ddl:
-            auto: update
           region:
             factory_class: cloud.agileframework.cache.support.redis.RedisRegionFactory
   datasource:
