@@ -623,8 +623,8 @@ public class Dao {
         return result;
     }
 
-    public <T> List<T> findBySQL(String sql, Class<T> clazz) {
-        return findBySQL(sql, clazz, null, null);
+    public <T> List<T> findBySQL(String sql, Class<T> clazz, Object... parameters) {
+        return findBySQL(sql, clazz, null, null, parameters);
     }
 
     /**
