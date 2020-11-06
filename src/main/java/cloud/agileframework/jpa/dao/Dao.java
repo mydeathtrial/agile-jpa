@@ -545,26 +545,26 @@ public class Dao {
 
         List<Sort.Order> sorts = Lists.newArrayList();
 
-        List<SQLSelectOrderByItem> items = SqlUtil.getSort(sql);
-        if (items != null) {
-            for (SQLSelectOrderByItem item : items) {
-                String column = item.getExpr().toString();
-                if (item.getType() == null) {
-                    sorts.add(Sort.Order.by(column));
-                } else {
-                    Sort.Direction des = Sort.Direction.fromString(item.getType().name_lcase);
-                    switch (des) {
-                        case ASC:
-                            sorts.add(Sort.Order.asc(column));
-                            break;
-                        case DESC:
-                            sorts.add(Sort.Order.desc(column));
-                            break;
-                        default:
-                    }
-                }
-            }
-        }
+//        List<SQLSelectOrderByItem> items = SqlUtil.getSort(sql);
+//        if (items != null) {
+//            for (SQLSelectOrderByItem item : items) {
+//                String column = item.getExpr().toString();
+//                if (item.getType() == null) {
+//                    sorts.add(Sort.Order.by(column));
+//                } else {
+//                    Sort.Direction des = Sort.Direction.fromString(item.getType().name_lcase);
+//                    switch (des) {
+//                        case ASC:
+//                            sorts.add(Sort.Order.asc(column));
+//                            break;
+//                        case DESC:
+//                            sorts.add(Sort.Order.desc(column));
+//                            break;
+//                        default:
+//                    }
+//                }
+//            }
+//        }
 
         if (!sorts.isEmpty()) {
             pageable = PageRequest.of(page - 1, size, Sort.by(sorts));
