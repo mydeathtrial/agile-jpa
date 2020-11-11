@@ -1,7 +1,7 @@
 package com.agile;
 
 import cloud.agileframework.dictionary.DictionaryDataManagerProxy;
-import cloud.agileframework.dictionary.MemoryDictionaryData;
+import cloud.agileframework.dictionary.DictionaryDataBase;
 import com.agile.mvc.entity.SysApiEntity;
 import cloud.agileframework.jpa.dao.Dao;
 import com.alibaba.fastjson.JSON;
@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 
-import static cloud.agileframework.sql.SqlUtil.parserSQL;
 
 /**
  * @author 佟盟
@@ -40,9 +39,9 @@ public class TestTask {
 
     @Before
     public void init() {
-        manager.add(new MemoryDictionaryData("1", null, "状态", "type"));
-        manager.add(new MemoryDictionaryData("2", "1", "对", "1"));
-        manager.add(new MemoryDictionaryData("3", "1", "错", "0"));
+        manager.add(new DictionaryDataBase("1", null, "状态", "type"));
+        manager.add(new DictionaryDataBase("2", "1", "对", "1"));
+        manager.add(new DictionaryDataBase("3", "1", "错", "0"));
     }
 
     @Autowired

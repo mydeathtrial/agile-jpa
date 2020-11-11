@@ -6,7 +6,6 @@ import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.jpa.dictionary.DataExtendManager;
 import cloud.agileframework.sql.SqlUtil;
-import com.alibaba.druid.sql.ast.statement.SQLSelectOrderByItem;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.ArrayUtils;
@@ -38,7 +37,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -758,7 +760,14 @@ public class Dao {
         if (ClassUtil.isWrapOrPrimitive(clazz)) {
             return true;
         }
-        return String.class == clazz || BigDecimal.class == clazz || Date.class == clazz;
+        return String.class == clazz
+                || BigDecimal.class == clazz
+                || Date.class == clazz
+                || BigInteger.class == clazz
+                || StringBuilder.class == clazz
+                || StringBuffer.class == clazz
+                || Timestamp.class == clazz
+                || Time.class == clazz;
     }
 
     private void queryCoverMap(Query query) {
