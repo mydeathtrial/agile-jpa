@@ -6,7 +6,7 @@ spring:
       ddl-auto: none
       naming:
         implicit-strategy: org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         hbm2ddl:
@@ -98,7 +98,7 @@ spring:
           statement-execute-batch-after-log-enabled: false
           statement-prepare-after-log-enabled: false
           statement-create-after-log-enabled: false
-          statement-log-error-enabled: false
+          statement-log-error-enabled: true
           statement-prepare-call-after-log-enabled: false
           connection-connect-after-log-enabled: false
           connection-log-error-enabled: false
@@ -113,7 +113,7 @@ spring:
         slf4j:
           enabled: true
           data-source-log-enabled: false
-          statement-executable-sql-log-enable: false
+          statement-executable-sql-log-enable: true
           connection-log-enabled: false
           result-set-log-enabled: false
           statement-log-enabled: true
@@ -127,7 +127,7 @@ spring:
           statement-execute-batch-after-log-enabled: false
           statement-prepare-after-log-enabled: false
           statement-create-after-log-enabled: false
-          statement-log-error-enabled: false
+          statement-log-error-enabled: true
           statement-prepare-call-after-log-enabled: false
           connection-connect-after-log-enabled: false
           connection-log-error-enabled: false
@@ -142,7 +142,7 @@ spring:
         log4j2:
           enabled: true
           data-source-log-enabled: false
-          statement-executable-sql-log-enable: false
+          statement-executable-sql-log-enable: true
           connection-log-enabled: false
           result-set-log-enabled: false
           statement-log-enabled: true
@@ -156,7 +156,7 @@ spring:
           statement-execute-batch-after-log-enabled: false
           statement-prepare-after-log-enabled: false
           statement-create-after-log-enabled: false
-          statement-log-error-enabled: false
+          statement-log-error-enabled: true
           statement-prepare-call-after-log-enabled: false
           connection-connect-after-log-enabled: false
           connection-log-error-enabled: false
