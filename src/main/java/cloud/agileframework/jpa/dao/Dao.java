@@ -805,7 +805,7 @@ public class Dao {
             } else if (p.getClass().isArray()) {
                 query = getEntityManager().createNativeQuery(sql);
                 for (int i = 0; i < Array.getLength(p); i++) {
-                    query.setParameter(i + 1, Array.get(p, i));
+                    query.setParameter(i, Array.get(p, i));
                 }
             } else if (Collection.class.isAssignableFrom(p.getClass())) {
                 query = getEntityManager().createNativeQuery(sql);
@@ -840,7 +840,7 @@ public class Dao {
             }
 
             for (int i = 0; i < parameters.length; i++) {
-                query.setParameter(i + 1, parameters[i]);
+                query.setParameter(i, parameters[i]);
             }
         }
         return query;
