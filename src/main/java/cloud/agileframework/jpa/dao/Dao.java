@@ -131,12 +131,16 @@ public class Dao {
         return getEntityManager().contains(o);
     }
 
+    /**
+     * 保存或更新
+     *
+     * @param o 已经有的对象更新，不存在的保存
+     * @param <T> 泛型
+     * @return 被跟踪对象
+     */
     public <T> T saveOrUpdate(T o) {
-        if (getEntityManager().contains(o)) {
-            return saveAndReturn(o);
-        } else {
-            return update(o);
-        }
+        SimpleJpaRepository<T, Object> repository = (SimpleJpaRepository<T, Object>) getRepository(o.getClass());
+        return repository.save(o);
     }
 
     /**
@@ -229,14 +233,19 @@ public class Dao {
     /**
      * 更新或新增
      *
-     * @param o   ORM对象
+     * @param o   ORM对象，瞬态对象时不会被跟踪
      * @param <T> 表对应的实体类型
-     * @return 返回更新后的数据
+     * @return 是否更新成功
      */
-    public <T> T update(T o) {
+    public <T> boolean update(T o) {
+        Object id = getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(o);
+        Object old = getEntityManager().find(o.getClass(), id);
+        if (old == null) {
+            return false;
+        }
         T e = getEntityManager().merge(o);
         dictionaryManager.cover(e);
-        return e;
+        return true;
     }
 
     /**
@@ -250,10 +259,8 @@ public class Dao {
      */
     @SuppressWarnings("unchecked")
     public <T> T updateOfNotNull(T o) throws IllegalAccessException {
-        Class<T> clazz = (Class<T>) o.getClass();
-        Field idField = getIdField(clazz);
-        idField.setAccessible(true);
-        T old = findOne(clazz, idField.get(o));
+        Object id = getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(o);
+        T old = (T)getEntityManager().find(o.getClass(), id);
         ObjectUtil.copyProperties(o, old, ObjectUtil.Compare.DIFF_SOURCE_NOT_NULL);
         T e = getEntityManager().merge(old);
         dictionaryManager.cover(e);
