@@ -134,13 +134,23 @@ public class Dao {
     /**
      * 保存或更新
      *
-     * @param o 已经有的对象更新，不存在的保存
+     * @param o   已经有的对象更新，不存在的保存
      * @param <T> 泛型
      * @return 被跟踪对象
      */
     public <T> T saveOrUpdate(T o) {
-        SimpleJpaRepository<T, Object> repository = (SimpleJpaRepository<T, Object>) getRepository(o.getClass());
-        return repository.save(o);
+        Object id = getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(o);
+        Object old = getEntityManager().find(o.getClass(), id);
+        T e;
+        if (old == null) {
+            SimpleJpaRepository<T, Object> repository = (SimpleJpaRepository<T, Object>) getRepository(o.getClass());
+            e = repository.save(o);
+        } else {
+            e = getEntityManager().merge(o);
+        }
+
+        dictionaryManager.cover(e);
+        return e;
     }
 
     /**
@@ -260,7 +270,7 @@ public class Dao {
     @SuppressWarnings("unchecked")
     public <T> T updateOfNotNull(T o) throws IllegalAccessException {
         Object id = getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(o);
-        T old = (T)getEntityManager().find(o.getClass(), id);
+        T old = (T) getEntityManager().find(o.getClass(), id);
         ObjectUtil.copyProperties(o, old, ObjectUtil.Compare.DIFF_SOURCE_NOT_NULL);
         T e = getEntityManager().merge(old);
         dictionaryManager.cover(e);
