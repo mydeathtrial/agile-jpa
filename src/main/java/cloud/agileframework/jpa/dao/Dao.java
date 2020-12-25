@@ -819,18 +819,20 @@ public class Dao {
             if (canCastClass(p.getClass())) {
                 query = getEntityManager().createNativeQuery(sql);
                 query.setParameter(0, p);
-            } else if (p.getClass().isArray()) {
-                query = getEntityManager().createNativeQuery(sql);
-                for (int i = 0; i < Array.getLength(p); i++) {
-                    query.setParameter(i, Array.get(p, i));
-                }
-            } else if (Collection.class.isAssignableFrom(p.getClass())) {
-                query = getEntityManager().createNativeQuery(sql);
-                int i = 0;
-                for (Object parameter : (Collection<Object>) p) {
-                    query.setParameter(i++, parameter);
-                }
-            } else {
+            }
+//            else if (p.getClass().isArray()) {
+//                query = getEntityManager().createNativeQuery(sql);
+//                for (int i = 0; i < Array.getLength(p); i++) {
+//                    query.setParameter(i, Array.get(p, i));
+//                }
+//            } else if (Collection.class.isAssignableFrom(p.getClass())) {
+//                query = getEntityManager().createNativeQuery(sql);
+//                int i = 0;
+//                for (Object parameter : (Collection<Object>) p) {
+//                    query.setParameter(i++, parameter);
+//                }
+//            }
+            else {
                 Map<String, Object> map = Maps.newHashMap();
 
                 if (isCount) {
