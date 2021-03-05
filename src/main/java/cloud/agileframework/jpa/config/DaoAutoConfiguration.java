@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @ConfigurationProperties("agile.jpa")
-@ConditionalOnProperty(prefix = "agile.jpa", name = "enable")
+@ConditionalOnProperty(prefix = "agile.jpa", name = "enable", matchIfMissing = true)
 @AutoConfigureAfter({DataSourceAutoConfiguration.class, DictionaryAutoConfiguration.class})
 public class DaoAutoConfiguration {
 

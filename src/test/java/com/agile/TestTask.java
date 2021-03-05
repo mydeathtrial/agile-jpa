@@ -1,11 +1,18 @@
 package com.agile;
 
-import cloud.agileframework.dictionary.DictionaryDataManagerProxy;
 import cloud.agileframework.dictionary.DictionaryDataBase;
-import com.agile.mvc.entity.SysApiEntity;
+import cloud.agileframework.dictionary.DictionaryDataManagerProxy;
 import cloud.agileframework.jpa.dao.Dao;
+import cloud.agileframework.spring.util.IdUtil;
+import com.agile.mvc.entity.MyEntityPathBase;
+import com.agile.mvc.entity.SysApiEntity;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
+import com.querydsl.core.types.dsl.PathBuilder;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.querydsl.sql.MySQLTemplates;
+import com.querydsl.sql.SQLBindings;
+import com.querydsl.sql.SQLQuery;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 
 /**
@@ -61,24 +69,24 @@ public class TestTask {
 
     @Test
     @Transactional
-    public void update(){
+    public void update() {
         dao.update(create());
     }
 
     @Test
-    public void query(){
+    public void query() {
         List<SysApiEntity> list = dao.findBySQL("select * from sys_api", SysApiEntity.class);
-        logger.info(JSON.toJSONString(list,true));
+        logger.info(JSON.toJSONString(list, true));
     }
 
     @Test
-    public void page(){
+    public void page() {
         Page<SysApiEntity> list = dao.pageBySQL("select * from sys_api", 1, 10, SysApiEntity.class);
-        logger.info(JSON.toJSONString(list,true));
+        logger.info(JSON.toJSONString(list, true));
     }
 
     @Test
-    public void findOne(){
+    public void findOne() {
         SysApiEntity s = dao.findOne("select 1 as name,1 as type", SysApiEntity.class);
         System.out.println(s);
     }
@@ -112,7 +120,7 @@ public class TestTask {
     }
 
     @Test
-    public void query2(){
+    public void query2() {
 //        String sql = "select a.business_code AS 'businessCode',${typeId2:tudou,} " +
 //                "sd.depart_name AS 'deptName', " +
 //                "a.business_name AS 'businessName', a.foura_flag AS 'fouraFlag', ad.datasource AS 'dataSource', " +
@@ -127,16 +135,46 @@ public class TestTask {
     }
 
     @Test
-    public void query3(){
+    public void query3() {
         dao.findAllByClass(SysApiEntity.class);
     }
 
-    private SysApiEntity create(){
+    private SysApiEntity create() {
         SysApiEntity entity = new SysApiEntity();
         entity.setBusinessCode("asd");
         entity.setName("asd");
-        entity.setSysApiId(1L);
+        entity.setId(IdUtil.generatorId());
         entity.setType(false);
         return entity;
+    }
+
+    @Test
+    @Transactional
+    public void query4() {
+        IntStream.range(0, 100).forEach(a -> {
+            SysApiEntity entity = new SysApiEntity();
+            entity.setBusinessCode("asd" + a);
+            entity.setName("asd" + a);
+            entity.setId(IdUtil.generatorId());
+            entity.setType(false);
+            dao.save(entity);
+        });
+//        QBaseEntity baseEntity = QBaseEntity.baseEntity;
+//        QSysApiEntity sysApiEntity = QSysApiEntity.sysApiEntity;
+        JPAQueryFactory queryFactory = new JPAQueryFactory(dao.getEntityManager());
+//        queryFactory.selectFrom(sysApiEntity)
+//                .where(
+//                        sysApiEntity.id.like("%1")
+//                ).fetch();
+
+        MyEntityPathBase<SysApiEntity> e = new MyEntityPathBase<>(SysApiEntity.class, "a");
+        queryFactory.selectFrom(e).where(e.createLong("id").eq(1L)).fetch();
+
+        final SQLQuery<Object> sqlQuery = new SQLQuery<>(MySQLTemplates.DEFAULT);
+        PathBuilder<Object> pathBuilder = new PathBuilder<>(Object.class, "person");
+        sqlQuery.select(pathBuilder.get("name")).from(pathBuilder.getRoot()).where(pathBuilder.get("idnumber").in("a", "b", "c")).offset(5).limit(10);
+        final SQLBindings bindings = sqlQuery.getSQL();
+        System.out.println(bindings.getSQL());
+        System.out.println(bindings.getNullFriendlyBindings());
     }
 }

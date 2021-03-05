@@ -2,17 +2,15 @@ package com.agile.mvc.entity;
 
 import cloud.agileframework.dictionary.annotation.Dictionary;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import org.springframework.data.annotation.Persistent;
+import lombok.experimental.SuperBuilder;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import java.io.Serializable;
@@ -24,29 +22,22 @@ import java.io.Serializable;
  */
 @ToString
 @Setter
-@Builder
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "sys_api")
-public class SysApiEntity implements Serializable {
+public class SysApiEntity extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private Long sysApiId;
     private String name;
     private Boolean type;
-    @Dictionary(fieldName = "type",isFull = true,dicCode = "type")
+    @Dictionary(fieldName = "type", isFull = true, dicCode = "type")
     private String typeText;
     private String businessName;
     private String businessCode;
     private String remarks;
-
-    @Column(name = "sys_api_id", nullable = false, length = 19)
-    @Id
-    public Long getSysApiId() {
-        return sysApiId;
-    }
 
     @Column(name = "name", length = 65535)
     @Basic

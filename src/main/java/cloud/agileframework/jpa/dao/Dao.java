@@ -3,7 +3,9 @@ package cloud.agileframework.jpa.dao;
 import cloud.agileframework.common.util.clazz.ClassInfo;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
+import cloud.agileframework.common.util.collection.SortInfo;
 import cloud.agileframework.common.util.object.ObjectUtil;
+import cloud.agileframework.common.util.string.StringUtil;
 import cloud.agileframework.jpa.dictionary.DataExtendManager;
 import cloud.agileframework.sql.SqlUtil;
 import com.google.common.collect.Lists;
@@ -32,7 +34,6 @@ import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.metamodel.EntityType;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -43,7 +44,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -139,10 +139,15 @@ public class Dao {
      * @return 被跟踪对象
      */
     public <T> T saveOrUpdate(T o) {
-        Object id = getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(o);
-        Object old = getEntityManager().find(o.getClass(), id);
         T e;
-        if (old == null) {
+        boolean save = true;
+        Object id = getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(o);
+        if (id != null) {
+            Object old = getEntityManager().find(o.getClass(), id);
+            save = old == null;
+        }
+
+        if (save) {
             SimpleJpaRepository<T, Object> repository = (SimpleJpaRepository<T, Object>) getRepository(o.getClass());
             e = repository.save(o);
         } else {
@@ -522,6 +527,7 @@ public class Dao {
         if (object instanceof Class) {
             return this.getRepository((Class<T>) object).findAll(pageRequest);
         }
+        parseDo(object);
         Example<T> example = Example.of(object, matcher);
         Class<T> clazz = (Class<T>) object.getClass();
         Page<T> page = this.getRepository(clazz).findAll(example, pageRequest);
@@ -531,6 +537,21 @@ public class Dao {
 
     public <T> Page<T> page(T object, PageRequest pageRequest) {
         return page(object, ExampleMatcher.matching(), pageRequest);
+    }
+
+    private <T> void parseDo(T object) {
+        Class<?> clazz = object.getClass();
+        ClassInfo<?> classInfo = ClassInfo.getCache(clazz);
+        classInfo.getAllField().forEach(a -> {
+            try {
+                if (a.getType() == String.class && StringUtil.isBlank((String) (a.get(object)))) {
+                    a.setAccessible(true);
+                    a.set(object, null);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -748,8 +769,14 @@ public class Dao {
         return ClassInfo.getCache(clazz).getField(entityInfo.getId(entityInfo.getIdType().getJavaType()).getName());
     }
 
-    private Object getId(Object o) throws IllegalAccessException {
+    public Object getId(Object o) throws IllegalAccessException {
         return getIdField(o.getClass()).get(o);
+    }
+
+    public void setId(Object o, Object id) throws IllegalAccessException {
+        final Field idField = getIdField(o.getClass());
+        idField.setAccessible(true);
+        idField.set(o, id);
     }
 
     /**
@@ -819,20 +846,7 @@ public class Dao {
             if (canCastClass(p.getClass())) {
                 query = getEntityManager().createNativeQuery(sql);
                 query.setParameter(0, p);
-            }
-//            else if (p.getClass().isArray()) {
-//                query = getEntityManager().createNativeQuery(sql);
-//                for (int i = 0; i < Array.getLength(p); i++) {
-//                    query.setParameter(i, Array.get(p, i));
-//                }
-//            } else if (Collection.class.isAssignableFrom(p.getClass())) {
-//                query = getEntityManager().createNativeQuery(sql);
-//                int i = 0;
-//                for (Object parameter : (Collection<Object>) p) {
-//                    query.setParameter(i++, parameter);
-//                }
-//            }
-            else {
+            } else {
                 Map<String, Object> map = Maps.newHashMap();
 
                 if (isCount) {
@@ -926,5 +940,83 @@ public class Dao {
      */
     public long count(Class<?> tableClass) {
         return getRepository(tableClass).count();
+    }
+
+    /**
+     * 内存分页
+     *
+     * @param list      集合
+     * @param pageNum   页号
+     * @param pageSize  页大小
+     * @param sortInfos 排序字段
+     * @param <T>       泛型
+     * @return 分页
+     */
+    public <T> Page<T> memoryPage(List<T> list, int pageNum, int pageSize, SortInfo... sortInfos) {
+        PageRequest pageRequest = PageRequest.of(pageNum - 1, pageSize);
+        PageImpl<T> page = new PageImpl<>(Lists.newArrayList(), pageRequest, 0);
+
+        sort(list, sortInfos);
+
+        int fromIndex = (pageNum - 1) * pageSize;
+        int toIndex = pageNum * pageSize;
+
+        if (list.isEmpty() || fromIndex > list.size()) {
+            return page;
+        } else if (toIndex < list.size()) {
+            page = new PageImpl<>(list.subList(fromIndex, toIndex), pageRequest, list.size());
+        } else {
+            page = new PageImpl<>(list.subList(fromIndex, list.size()), pageRequest, list.size());
+        }
+        return page;
+    }
+
+    private static <T> void sort(List<T> list, String property) {
+        list.sort((o1, o2) -> {
+            try {
+                if (Map.class.isAssignableFrom(o1.getClass())) {
+                    return String.valueOf(((Map) o1).get(property)).compareTo(String.valueOf(((Map) o2).get(property)));
+                } else {
+                    Class<?> clazz = o1.getClass();
+                    Field field = ClassInfo.getCache(clazz).getField(property);
+                    return String.valueOf(field.get(o1)).compareTo(String.valueOf(field.get(o2)));
+                }
+            } catch (IllegalAccessException var5) {
+                var5.printStackTrace();
+                return 0;
+            }
+        });
+    }
+
+    private static <T> void sort(List<T> list, SortInfo... sortInfos) {
+        if (sortInfos == null || sortInfos.length == 0) {
+            return;
+        }
+        list.sort((o1, o2) -> {
+            try {
+                for (SortInfo sort : sortInfos) {
+                    final String property = sort.getProperty();
+                    int v = compare(o1, o2, property, sort.isSort());
+                    if (v != 0) {
+                        break;
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+            return 0;
+        });
+    }
+
+    private static <T> int compare(T o1, T o2, String property, boolean sort) throws IllegalAccessException {
+        int result = 0;
+        if (Map.class.isAssignableFrom(o1.getClass())) {
+            result = String.valueOf(((Map) o1).get(property)).compareTo(String.valueOf(((Map) o2).get(property)));
+        } else {
+            Class<?> clazz = o1.getClass();
+            Field field = ClassInfo.getCache(clazz).getField(property);
+            result = String.valueOf(field.get(o1)).compareTo(String.valueOf(field.get(o2)));
+        }
+        return sort ? result : -result;
     }
 }

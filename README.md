@@ -1,29 +1,36 @@
 # agile-jpa ： spring-data-jpa扩展
+
 [![spring-data-jpa](https://img.shields.io/badge/Spring--data--jpa-LATEST-green)](https://img.shields.io/badge/Spring--data--jpa-LATEST-green)
 [![maven](https://img.shields.io/badge/build-maven-green)](https://img.shields.io/badge/build-maven-green)
+
 ## 它有什么作用
 
 * **持久层工具合并**
-使用该组件后，全局仅需要注入唯一的Dao工具，无需再声明其他Dao/Repository，一个工具搞定所有Dao，极大简化持久层代码量。
+  使用该组件后，全局仅需要注入唯一的Dao工具，无需再声明其他Dao/Repository，一个工具搞定所有Dao，极大简化持久层代码量。
 
 * **原生动态sql解析支持**
-依靠agile-sql（动态sql解析器）实现jpa中对sql语法段的动态解析，弥补其在动态sql解析方面的短板。面对复杂查询语句将不再是难点。
+  依靠agile-sql（动态sql解析器）实现jpa中对sql语法段的动态解析，弥补其在动态sql解析方面的短板。面对复杂查询语句将不再是难点。
 
 * **内置slq分页与jpa分页**
-JPA风格的Do类对象操作形式分页与原生SQL形式分页均返回统一的分页数据格式，且提供total总条数结果
+  JPA风格的Do类对象操作形式分页与原生SQL形式分页均返回统一的分页数据格式，且提供total总条数结果
 
 * **内置字典翻译**
-依靠agile-dictionary组件，查询过程中会识别`@Dictionary`注解，如果不需要字典翻译时可以将该组件于pom中直接移除
+  依靠agile-dictionary组件，查询过程中会识别`@Dictionary`注解，如果不需要字典翻译时可以将该组件于pom中直接移除
+
 -------
+
 ## 快速入门
+
 开始你的第一个项目是非常容易的。
 
 #### 步骤 1: 下载包
-您可以从[最新稳定版本]下载包(https://github.com/mydeathtrial/agile-jpa/releases).
-该包已上传至maven中央仓库，可在pom中直接声明引用
 
-以版本agile-jpa-2.0.9.jar为例。
+您可以从[最新稳定版本]下载包(https://github.com/mydeathtrial/agile-jpa/releases). 该包已上传至maven中央仓库，可在pom中直接声明引用
+
+以版本agile-jpa-2.0.10.jar为例。
+
 #### 步骤 2: 添加maven依赖
+
 ```xml
 <!--声明中央仓库-->
 <repositories>
@@ -32,15 +39,18 @@ JPA风格的Do类对象操作形式分页与原生SQL形式分页均返回统一
         <url>https://repo1.maven.org/maven2/</url>
     </repository>
 </repositories>
-<!--声明依赖-->
+        <!--声明依赖-->
 <dependency>
-    <groupId>cloud.agileframework</groupId>
-    <artifactId>agile-jpa</artifactId>
-    <version>2.0.9</version>
+<groupId>cloud.agileframework</groupId>
+<artifactId>agile-jpa</artifactId>
+<version>2.0.10</version>
 </dependency>
 ```
+
 #### 步骤 3: 开箱即用，由于API众多，本文只介绍常用方法，更多方法请查看javadoc
+
 - <span id="id1">新增</span>
+
 ```
 /**
  * 功能：延迟保存
@@ -48,6 +58,7 @@ JPA风格的Do类对象操作形式分页与原生SQL形式分页均返回统一
  */
 dao.save(new SysUsersEntity());
 ```
+
 ```
 /**
  * 功能：立即保存
@@ -55,6 +66,7 @@ dao.save(new SysUsersEntity());
  */
 SysUsersEntity entity = dao.saveAndReturn(new SysUsersEntity());
 ```
+
 ```
 /**
  * 功能：立即保存
@@ -62,6 +74,7 @@ SysUsersEntity entity = dao.saveAndReturn(new SysUsersEntity());
  */
 SysUsersEntity entity = dao.saveAndReturn(new SysUsersEntity()，true);
 ```
+
 ```
 /**
  * 功能：批量立即保存
@@ -75,8 +88,8 @@ boolean isSuccess = dao.save(list);
 
 ------------
 
-
 - <span id="id2">删除</span>
+
 ```
 /**
  * 功能：批量模糊删除数据
@@ -87,6 +100,7 @@ SysUsersEntity entity = new SysUsersEntity()；
 entity.setName("Tom");
 dao.delete(entity);
 ```
+
 ```
 /**
  * 功能：删除对应表指定ID的数据
@@ -95,6 +109,7 @@ dao.delete(entity);
  */
 dao.deleteById(SysUsersEntity.class,"123");
 ```
+
 ```
 /**
  * 功能：清空全表
@@ -103,6 +118,7 @@ dao.deleteById(SysUsersEntity.class,"123");
  */
 dao.deleteAll(SysUsersEntity.class);
 ```
+
 ```
 /**
  * 功能：清空全表
@@ -111,6 +127,7 @@ dao.deleteAll(SysUsersEntity.class);
  */
 dao.deleteAllInBatch(SysUsersEntity.class);
 ```
+
 ```
 /**
  * 功能：批量删除指定表指定主键的数据
@@ -119,6 +136,7 @@ dao.deleteAllInBatch(SysUsersEntity.class);
  */
 dao.deleteInBatch(SysUsersEntity.class,new Object[]{"1111","2222"});
 ```
+
 ```
 /**
  * 功能：批量删除指定表指定的数据集
@@ -130,6 +148,7 @@ list.add(new SysUsersEntity());
 list.add(new SysUsersEntity());
 dao.deleteInBatch(list);
 ```
+
 ```
 /**
  * 功能：sql方式批量删除
@@ -144,8 +163,8 @@ int total = dao.updateBySQL(sql, params);
 
 ------------
 
-
 - <span id="id3">修改</span>
+
 ```
 /**
  * 功能：更新数据
@@ -154,6 +173,7 @@ int total = dao.updateBySQL(sql, params);
 SysUsersEntity newEntity = ...
 dao.update(newEntity);
 ```
+
 ```
 /**
  * 功能：更新非空字段数据
@@ -162,6 +182,7 @@ dao.update(newEntity);
 SysUsersEntity newEntity = ...
 dao.updateOfNotNull(newEntity);
 ```
+
 ```
 /**
  * 功能：sql方式更新数据
@@ -174,10 +195,10 @@ int total = dao.updateBySQL(sql,"Tom","1111");
 
 ------------
 
-
 - <span id="id4">查询</span>
-<span style="color:red">查询方法多而杂，本文只例举常用例子，具体用发参照java doc</span>
-只有select支持 {id} 方式传参。如果该key值没有传参数，则会去掉该条件
+  <span style="color:red">查询方法多而杂，本文只例举常用例子，具体用发参照java doc</span>
+  只有select支持 {id} 方式传参。如果该key值没有传参数，则会去掉该条件
+
 > **1、只有select支持 {id} 方式传参。如果该key值没有传参数，则会去掉该条件**
 **2、 当 ? 参数没有值时候条件不会去掉。例如：selec * from person where name=? 没有传参时则条件不会去掉**
 
@@ -189,6 +210,7 @@ int total = dao.updateBySQL(sql,"Tom","1111");
  */
 SysUsersEntity entity = dao.findOne(SysUsersEntity.class,"1111");
 ```
+
 ```
 /**
  * 功能：根据例子查询单条
@@ -199,6 +221,7 @@ SysUsersEntity entity = new SysUsersEntity()；
 entity.setName("Tom");
 SysUsersEntity entity = dao.findOne(entity);
 ```
+
 ```
 /**
  * 功能：根据sql语句查询单条
@@ -208,6 +231,7 @@ SysUsersEntity entity = dao.findOne(entity);
 String sql = "select * from sys_users where id = ?";
 SysUsersEntity entity = dao.findOne(sql,SysUsersEntity.class,"1111");
 ```
+
 ```
 /**
  * 功能：根据sql语句查询单条
@@ -219,6 +243,7 @@ Map<String,Object> params = new HashMap<>(1);
 params.put("id1","1111");
 SysUsersEntity entity = dao.findOne(sql,SysUsersEntity.class,params);
 ```
+
 ```
 /**
  * 功能：根据例子查询数据集
@@ -229,6 +254,7 @@ SysUsersEntity entity = new SysUsersEntity()；
 entity.setName("Tom");
 SysUsersEntity entity = dao.findAll(entity);
 ```
+
 ```
 /**
  * 功能：根据例子与排序信息Sort查询数据集并排序
@@ -240,6 +266,7 @@ SysUsersEntity entity = new SysUsersEntity()；
 entity.setName("Tom");
 SysUsersEntity entity = dao.findAll(entity，sort);
 ```
+
 ```
 /**
  * 功能：根据sql查询数据集
@@ -251,6 +278,7 @@ Map<String,Object> params = new HashMap<>(1);
 params.put("id1","1111");
 List<SysUsersEntity> entity = dao.findAll(sql，SysUsersEntity.class,params);
 ```
+
 ```
 /**
  * 功能：根据实体类型查询全表数据
@@ -259,6 +287,7 @@ List<SysUsersEntity> entity = dao.findAll(sql，SysUsersEntity.class,params);
  */
 List<SysUsersEntity> list = dao.findAll(SysUsersEntity.class);
 ```
+
 ```
 /**
  * 功能：根据sql查询一条数据的一个字段值
@@ -268,6 +297,7 @@ List<SysUsersEntity> list = dao.findAll(SysUsersEntity.class);
  */
 List<SysUsersEntity> list = dao.findAllById(SysUsersEntity.class，new String[]{"1111","2222"});
 ```
+
 ```
 /**
  * 功能：根据sql查询数据集
@@ -279,6 +309,7 @@ Map<String,Object> params = new HashMap<>(1);
 params.put("id1","1111");
 List<Map<String, Object>> entity = dao.findAllBySQL(sql，params);
 ```
+
 ```
 /**
  * 功能：根据sql查询一条数据的一个字段值
@@ -293,9 +324,9 @@ Object entity = dao.findParameter(sql，params);
 
 ------------
 
-
 - <span id="id5">分页</span>
-<span style="color:red">查询方法多而杂，本文只例举常用例子，具体用发参照java doc</span>
+  <span style="color:red">查询方法多而杂，本文只例举常用例子，具体用发参照java doc</span>
+
 ```
 /**
  * 功能：按照例子查询 + 分页
@@ -308,6 +339,7 @@ SysUsersEntity entity = new SysUsersEntity()；
 entity.setName("Tom");
 Page page = dao.findAll(entity，pageNum，pageSize);
 ```
+
 ```
 /**
  * 功能：按照例子查询 + 分页 + 排序
@@ -321,6 +353,7 @@ SysUsersEntity entity = new SysUsersEntity()；
 entity.setName("Tom");
 Page page = dao.findAll(entity，pageNum，pageSize，sort);
 ```
+
 ```
 /**
  * 功能：按照sql查询 + 分页
@@ -335,6 +368,7 @@ Map<String,Object> params = new HashMap<>(1);
 params.put("id1","1111");
 Page page = dao.findPageBySQL(sql，pageNum,pageSize，params);
 ```
+
 - <span id="id11">like查询</span>
 
 ```
@@ -342,7 +376,9 @@ String sql= "select * from sys_role where name like '%{name}%'";
 Page<ParamRoleEntity> page = dao.findPageBySQL(sql, getInParam("pageNum", Integer.class), getInParam("pageSize", Integer.class), ParamRoleEntity.class, getInParam());
 
 ```
+
 - <span id="id12">批量删除或者更新</span>
+
 ```
 // 主键集合，支持Collection类型及数组类型
 List<String> ids = getInParamOfArray("ids");
