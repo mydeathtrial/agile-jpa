@@ -44,6 +44,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -843,10 +844,10 @@ public class Dao {
 
         if (parameters.length == 1) {
             Object p = parameters[0];
-            if (canCastClass(p.getClass())) {
+            if (canCastClass(p.getClass()) || p instanceof Collection) {
                 query = getEntityManager().createNativeQuery(sql);
                 query.setParameter(0, p);
-            } else {
+            }else {
                 Map<String, Object> map = Maps.newHashMap();
 
                 if (isCount) {

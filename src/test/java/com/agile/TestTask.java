@@ -1,7 +1,7 @@
 package com.agile;
 
 import cloud.agileframework.dictionary.DictionaryDataBase;
-import cloud.agileframework.dictionary.DictionaryDataManagerProxy;
+import cloud.agileframework.dictionary.DictionaryDataManager;
 import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.spring.util.IdUtil;
 import com.agile.mvc.entity.MyEntityPathBase;
@@ -42,7 +42,7 @@ public class TestTask {
     private final Logger logger = LoggerFactory.getLogger(TestTask.class);
 
     @Autowired
-    private DictionaryDataManagerProxy manager;
+    private DictionaryDataManager manager;
 
 
     @Before
