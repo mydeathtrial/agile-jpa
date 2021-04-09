@@ -847,7 +847,7 @@ public class Dao {
             if (canCastClass(p.getClass()) || p instanceof Collection) {
                 query = getEntityManager().createNativeQuery(sql);
                 query.setParameter(0, p);
-            }else {
+            } else {
                 Map<String, Object> map = Maps.newHashMap();
 
                 if (isCount) {
