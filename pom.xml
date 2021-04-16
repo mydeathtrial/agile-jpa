@@ -7,7 +7,7 @@
     <name>Agile JPA扩展，公共DAO</name>
     <groupId>cloud.agileframework</groupId>
     <artifactId>agile-jpa</artifactId>
-    <version>2.0.10.4</version>
+    <version>2.0.11</version>
     <description>JPA extension, public Dao</description>
     <url>https://github.com/mydeathtrial/agile-jpa</url>
 
@@ -96,12 +96,12 @@
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-sql</artifactId>
-            <version>2.0.10.4</version>
+            <version>2.0.11</version>
         </dependency>
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>spring-util</artifactId>
-            <version>2.0.10.4</version>
+            <version>2.0.11</version>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
@@ -135,7 +135,7 @@
         <dependency>
             <groupId>cloud.agileframework</groupId>
             <artifactId>agile-dictionary</artifactId>
-            <version>2.0.10.4</version>
+            <version>2.0.11</version>
             <optional>true</optional>
         </dependency>
 
