@@ -17,8 +17,6 @@ import org.hibernate.id.IdentifierGenerationException;
 import org.hibernate.query.internal.NativeQueryImpl;
 import org.hibernate.transform.ResultTransformer;
 import org.hibernate.transform.Transformers;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Example;
@@ -28,6 +26,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NonUniqueResultException;
@@ -54,9 +53,8 @@ import java.util.Map;
 /**
  * @author 佟盟 on 2017/11/15
  */
-public class Dao {
+public class Dao extends HibernateDaoSupport {
     private static final Map<Class<?>, SimpleJpaRepository> REPOSITORY_CACHE = new HashMap<>();
-    private final Logger logger = LoggerFactory.getLogger(Dao.class);
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
