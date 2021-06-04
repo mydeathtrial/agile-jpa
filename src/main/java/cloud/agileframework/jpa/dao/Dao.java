@@ -1018,4 +1018,89 @@ public class Dao extends HibernateDaoSupport {
         }
         return sort ? result : -result;
     }
+
+    /**
+     * 批量插入
+     * @param list 要保存的数据集合
+     * @param batchSize 多少条执行一次插入
+     */
+    public void batchInsert(List<Object> list,int batchSize) {
+        try {
+            if(batchSize<=0){
+                for (Object o : list) {
+                    getEntityManager().persist(o);
+                }
+                getEntityManager().flush();
+                getEntityManager().clear();
+            }
+            for (int i = 0; i < list.size(); i++) {
+                getEntityManager().persist(list.get(i));
+                if (i % batchSize == 0) {//一次一百条插入
+                    getEntityManager().flush();
+                    getEntityManager().clear();
+                }
+            }
+            logger.debug("save to DB success,list is " + list);
+        } catch (Exception e) {
+            logger.error("batch insert data fail.");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 批量更新
+     * @param list 要更新的数据集合
+     * @param batchSize 多少条执行一次更新
+     */
+    public void batchUpdate(List<Object> list,int batchSize) {
+        try {
+            if(batchSize<=0){
+                for (Object o : list) {
+                    getEntityManager().merge(o);
+                }
+                getEntityManager().flush();
+                getEntityManager().clear();
+            }
+            for (int i = 0; i < list.size(); i++) {
+                getEntityManager().merge(list.get(i));
+                if (i % batchSize == 0) {
+                    getEntityManager().flush();
+                    getEntityManager().clear();
+                }
+            }
+            logger.info("update data success,list is {}" + list);
+        } catch (Exception e) {
+            logger.error("batch update data fail.");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 批量删除
+     * @param list 要删除的数据集合
+     * @param batchSize 多少条执行一次删除
+     */
+    public void batchDelete(List<Object> list,int batchSize) {
+        try {
+            if(batchSize<=0){
+                for (Object o : list) {
+                    getEntityManager().remove(o);
+                }
+                getEntityManager().flush();
+                getEntityManager().clear();
+            }
+            for (int i = 0; i < list.size(); i++) {
+                getEntityManager().remove(list.get(i));
+                if (i % batchSize == 0) {
+                    getEntityManager().flush();
+                    getEntityManager().clear();
+                }
+            }
+            logger.info("delete data success,list is {}" + list);
+        } catch (Exception e) {
+            logger.error("batch delete data fail.");
+            e.printStackTrace();
+        }
+    }
+
 }
