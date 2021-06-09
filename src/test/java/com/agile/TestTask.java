@@ -117,21 +117,21 @@ public class TestTask {
         param.put("endTime", "22222222");
         param.put("businessName", new String[]{"j1", "j2"});
         param.put("businessCode", "33");
+        param.put("deptName",new String[]{"deptName1","deptName2"});
     }
 
     @Test
     public void query2() {
-//        String sql = "select a.business_code AS 'businessCode',${typeId2:tudou,} " +
-//                "sd.depart_name AS 'deptName', " +
-//                "a.business_name AS 'businessName', a.foura_flag AS 'fouraFlag', ad.datasource AS 'dataSource', " +
-//                "ad.describes AS 'describe' from asset_base a " +
-//                "left join asset_data_source ad on ad.asset_id = a.asset_id " +
-//                "left join sys_department sd on sd.sys_depart_id = a.dept_id  " +
-//                "where a.del_flag = 0 and ad.del_flag = 0 and a.dept_id in ({deptName}) " +
-//                "and a.asset_id in ({businessName:'assss'}) and a.business_code LIKE concat('%',{h.0},'%') and a.foura_flag = '{fouraFlag}' order by a.update_time desc ";
-//
-//        dao.findBySQL(sql,param);
-//        dao.findBySQL()
+        String sql = "select a.business_code AS 'businessCode',${typeId2:business_code,} " +
+                "sd.depart_name AS 'deptName', " +
+                "a.business_name AS 'businessName', a.foura_flag AS 'fouraFlag', ad.datasource AS 'dataSource', " +
+                "ad.describes AS 'describe' from asset_base a " +
+                "left join asset_data_source ad on ad.asset_id = a.asset_id " +
+                "left join sys_department sd on sd.sys_depart_id = a.dept_id  " +
+                "where a.del_flag = 0 and ad.del_flag = 0 and a.dept_id in ({deptName}) " +
+                "and a.asset_id in ({businessName:'assss'}) and a.business_code LIKE concat('%',{h.0},'%') and a.foura_flag = '{fouraFlag}' order by a.update_time desc ";
+
+        dao.findBySQL(sql,param);
     }
 
     @Test

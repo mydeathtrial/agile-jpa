@@ -856,7 +856,7 @@ public class Dao extends HibernateDaoSupport {
                 query = getEntityManager().createNativeQuery(sql);
                 try {
                     for (Map.Entry<String, Object> e : map.entrySet()) {
-                        query.setParameter(e.getKey(), e.getValue());
+                        query.setParameter(Integer.parseInt(e.getKey()), e.getValue());
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(sql, e);
