@@ -60,7 +60,7 @@ public class Dao extends HibernateDaoSupport {
 	private EntityManager entityManager;
 	@Autowired
 	private DataExtendManager dictionaryManager;
-	private DbType dbType;
+	private final DbType dbType;
 
 	public Dao(DbType dbType) {
 		this.dbType = dbType;
