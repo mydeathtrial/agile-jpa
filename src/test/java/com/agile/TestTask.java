@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -87,7 +88,12 @@ public class TestTask {
 
     @Test
     public void findOne() {
-        SysApiEntity s = dao.findOne("select 1 as name,1 as type", SysApiEntity.class);
+//        SysApiEntity s = dao.findOne("select 1 as name,1 as type", SysApiEntity.class);
+//        System.out.println(s);
+
+        List<String> s = dao.findBySQL("select '{\"nickname\": \"{p}\", \"avatar\": \"avatar_url\", \"tags\": [\"python\", \"golang\", \"db\"]}'::jsonb->>'nickname' as nickname", String.class, new HashMap<String, Object>() {{
+            put("p", "sd");
+        }});
         System.out.println(s);
     }
 
