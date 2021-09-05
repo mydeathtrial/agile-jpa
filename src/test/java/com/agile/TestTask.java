@@ -135,7 +135,7 @@ public class TestTask {
                 "left join asset_data_source ad on ad.asset_id = a.asset_id " +
                 "left join sys_department sd on sd.sys_depart_id = a.dept_id  " +
                 "where a.del_flag = 0 and ad.del_flag = 0 and a.dept_id in ({deptName}) " +
-                "and a.asset_id in ({businessName:'assss'}) and a.business_code LIKE concat('%',{h.0},'%') and a.foura_flag = '{fouraFlag}' order by a.update_time desc ";
+                "and a.asset_id in ({businessName:'assss'}) and a.business_code LIKE {h.0} and a.foura_flag = '{fouraFlag}' order by a.update_time desc ";
 
         dao.findBySQL(sql,param);
     }

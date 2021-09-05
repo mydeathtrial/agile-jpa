@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.persistence.EntityManager;
+import java.util.Locale;
 
 /**
  * @author 佟盟 on 2017/10/7
@@ -29,7 +30,7 @@ public class DaoAutoConfiguration {
 	@ConditionalOnMissingBean
 	public Dao dao(JpaProperties jpaProperties) {
 		String dbType = jpaProperties.getDatabase().name();
-		Dao dao = new Dao(DbType.of(dbType));
+		Dao dao = new Dao(DbType.of(dbType.toLowerCase(Locale.ROOT)));
 		dao.setSessionFactory(BeanUtil.getApplicationContext()
 				.getBean(EntityManager.class)
 				.getEntityManagerFactory()

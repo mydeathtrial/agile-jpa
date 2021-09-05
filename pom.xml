@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Agile JPA扩展，公共DAO</name>
+    <name>agile-jpa</name>
     <groupId>cloud.agileframework</groupId>
     <artifactId>agile-jpa</artifactId>
     <version>2.1.0.M5</version>
@@ -43,7 +43,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
-        <spring-boot.version>2.4.0-M1</spring-boot.version>
+        <spring-boot.version>2.5.4</spring-boot.version>
     </properties>
 
     <developers>
@@ -149,6 +149,10 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.2.23</version>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
         </dependency>
     </dependencies>
 
