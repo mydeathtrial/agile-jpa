@@ -18,7 +18,7 @@ import javax.persistence.MappedSuperclass;
 @Setter
 @SuperBuilder
 public class BaseEntity {
-    private Long id;
+    private String id;
 
     public BaseEntity() {
 
@@ -26,7 +26,7 @@ public class BaseEntity {
 
     @Column(name = "sys_api_id", nullable = false, length = 19)
     @Id
-    public Long getId() {
+    public String getId() {
         return id;
     }
 }

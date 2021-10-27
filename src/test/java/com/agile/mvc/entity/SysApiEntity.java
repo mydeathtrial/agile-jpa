@@ -2,18 +2,15 @@ package com.agile.mvc.entity;
 
 import cloud.agileframework.dictionary.annotation.Dictionary;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.Hibernate;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * 描述：[系统管理]目标任务表
@@ -25,7 +22,6 @@ import java.io.Serializable;
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "sys_api")
 public class SysApiEntity extends BaseEntity implements Serializable {
@@ -72,5 +68,18 @@ public class SysApiEntity extends BaseEntity implements Serializable {
     @Transient
     public String getTypeText() {
         return typeText;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        SysApiEntity that = (SysApiEntity) o;
+        return getId() != null && Objects.equals(getId(), that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
     }
 }

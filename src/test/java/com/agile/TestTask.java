@@ -4,15 +4,18 @@ import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.dictionary.DictionaryDataManager;
 import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.spring.util.IdUtil;
+import com.agile.mvc.entity.BaseEntity;
 import com.agile.mvc.entity.MyEntityPathBase;
 import com.agile.mvc.entity.SysApiEntity;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
+import com.querydsl.core.types.dsl.DslPath;
 import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.sql.MySQLTemplates;
 import com.querydsl.sql.SQLBindings;
 import com.querydsl.sql.SQLQuery;
+import lombok.SneakyThrows;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,6 +27,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.Query;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,9 +128,10 @@ public class TestTask {
         param.put("endTime", "22222222");
         param.put("businessName", new String[]{"j1", "j2"});
         param.put("businessCode", "33");
-        param.put("deptName",new String[]{"deptName1","deptName2"});
+        param.put("deptName", new String[]{"deptName1", "deptName2"});
     }
 
+    @SneakyThrows
     @Test
     public void query2() {
         String sql = "select a.business_code AS 'businessCode',${typeId2:business_code,} " +
@@ -137,7 +143,9 @@ public class TestTask {
                 "where a.del_flag = 0 and ad.del_flag = 0 and a.dept_id in ({deptName}) " +
                 "and a.asset_id in ({businessName:'assss'}) and a.business_code LIKE {h.0} and a.foura_flag = '{fouraFlag}' order by a.update_time desc ";
 
-        dao.findBySQL(sql,param);
+        Method creatQuery = Dao.class.getDeclaredMethod("creatQuery", boolean.class, String.class, Object[].class);
+        creatQuery.setAccessible(true);
+        creatQuery.invoke(dao, false, sql, new Object[]{param});
     }
 
     @Test
@@ -149,7 +157,7 @@ public class TestTask {
         SysApiEntity entity = new SysApiEntity();
         entity.setBusinessCode("asd");
         entity.setName("asd");
-        entity.setId(IdUtil.generatorId());
+        entity.setId(IdUtil.generatorIdToString());
         entity.setType(false);
         return entity;
     }
@@ -161,7 +169,7 @@ public class TestTask {
             SysApiEntity entity = new SysApiEntity();
             entity.setBusinessCode("asd" + a);
             entity.setName("asd" + a);
-            entity.setId(IdUtil.generatorId());
+            entity.setId(IdUtil.generatorIdToString());
             entity.setType(false);
             dao.save(entity);
         });
@@ -174,13 +182,31 @@ public class TestTask {
 //                ).fetch();
 
         MyEntityPathBase<SysApiEntity> e = new MyEntityPathBase<>(SysApiEntity.class, "a");
-        queryFactory.selectFrom(e).where(e.createLong("id").eq(1L)).fetch();
+        List<Object> one = queryFactory.select(new PathBuilder<>(Object.class, "a").get("name")).from(e).where(e.createString("id").eq("1")).fetch();
 
         final SQLQuery<Object> sqlQuery = new SQLQuery<>(MySQLTemplates.DEFAULT);
         PathBuilder<Object> pathBuilder = new PathBuilder<>(Object.class, "person");
-        sqlQuery.select(pathBuilder.get("name")).from(pathBuilder.getRoot()).where(pathBuilder.get("idnumber").in("a", "b", "c")).offset(5).limit(10);
+        sqlQuery.select(pathBuilder.get("name"))
+                .from(pathBuilder.getRoot())
+                .where(pathBuilder.get("idnumber")
+                        .in("a", "b", "c")).offset(5).limit(10);
         final SQLBindings bindings = sqlQuery.getSQL();
         System.out.println(bindings.getSQL());
         System.out.println(bindings.getNullFriendlyBindings());
+    }
+
+    @Before
+    public void before(){
+        dao.updateBySQL("drop table if exists SYS_API;"+"create table SYS_API\n" +
+                "(\n" +
+                "    SYS_API_ID    VARCHAR2 not null,\n" +
+                "    NAME          VARCHAR2,\n" +
+                "    BUSINESS_NAME VARCHAR2,\n" +
+                "    BUSINESS_CODE VARCHAR2,\n" +
+                "    REMARKS       TEXT,\n" +
+                "    TYPE          VARCHAR,\n" +
+                "    constraint SYS_API_PK\n" +
+                "        primary key (SYS_API_ID)\n" +
+                ")");
     }
 }
