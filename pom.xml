@@ -120,7 +120,7 @@
         </dependency>
         <dependency>
             <groupId>cloud.agileframework</groupId>
-            <artifactId>agile-sql</artifactId>
+            <artifactId>agile-data-common</artifactId>
             <version>2.1.0.M5</version>
         </dependency>
         <dependency>

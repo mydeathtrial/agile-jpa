@@ -184,7 +184,7 @@ public class Dao extends HibernateDaoSupport {
         return getEntityManager().unwrap(SessionImplementor.class).connection();
     }
 
-    public boolean contains(Object o) {
+    public <T> boolean contains(T o) {
         return getEntityManager().contains(o);
     }
 
@@ -536,6 +536,19 @@ public class Dao extends HibernateDaoSupport {
         dictionaryManager.cover(result);
         return result;
     }
+
+//    @SuppressWarnings("unchecked")
+//    public <T> List<T> findAll(T object, ExampleMatcher matcher, Sort sort) {
+//        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+//        CriteriaQuery<T> query = (CriteriaQuery<T>) criteriaBuilder.createQuery(object.getClass());
+//        Root<T> root = (Root<T>) query.from(object.getClass());
+//        query.select(criteriaBuilder.count(root.get("id")));
+//        Predicate predicate = criteriaBuilder.equal(root.get("id"), 1);
+//        query.where(predicate);
+//        Long singleResult = entityManager.createQuery(query).getSingleResult();
+//
+//    }
+
 
     /**
      * 按照例子查询多条分页
