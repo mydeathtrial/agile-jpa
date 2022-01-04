@@ -1,4 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-cloud.agileframework.jpa.config.DaoAutoConfiguration,\
-cloud.agileframework.jpa.config.DictionaryAutoConfiguration,\
-cloud.agileframework.jpa.config.DruidExtendAutoConfiguration
+cloud.agileframework.jpa.config.DaoAutoConfiguration

@@ -1,7 +1,8 @@
 package cloud.agileframework.jpa.config;
 
+import cloud.agileframework.data.common.config.DictionaryAutoConfiguration;
+import cloud.agileframework.data.common.dictionary.DataExtendManager;
 import cloud.agileframework.jpa.dao.Dao;
-import cloud.agileframework.jpa.dictionary.DataExtendManager;
 import cloud.agileframework.spring.util.BeanUtil;
 import com.alibaba.druid.util.JdbcUtils;
 import org.hibernate.SessionFactory;

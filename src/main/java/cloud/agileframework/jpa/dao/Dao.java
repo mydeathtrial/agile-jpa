@@ -6,7 +6,7 @@ import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.collection.SortInfo;
 import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.common.util.string.StringUtil;
-import cloud.agileframework.jpa.dictionary.DataExtendManager;
+import cloud.agileframework.data.common.dictionary.DataExtendManager;
 import cloud.agileframework.sql.SqlUtil;
 import com.alibaba.druid.DbType;
 import com.google.common.collect.Lists;
