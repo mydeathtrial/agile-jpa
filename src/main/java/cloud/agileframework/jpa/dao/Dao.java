@@ -6,13 +6,14 @@ import cloud.agileframework.common.util.clazz.TypeReference;
 import cloud.agileframework.common.util.collection.SortInfo;
 import cloud.agileframework.common.util.object.ObjectUtil;
 import cloud.agileframework.common.util.string.StringUtil;
+import cloud.agileframework.data.common.dao.BaseDao;
+import cloud.agileframework.data.common.dao.ColumnName;
 import cloud.agileframework.data.common.dictionary.DataExtendManager;
 import cloud.agileframework.sql.SqlUtil;
 import com.alibaba.druid.DbType;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.id.IdentifierGenerationException;
@@ -20,16 +21,14 @@ import org.hibernate.query.internal.NativeQueryImpl;
 import org.hibernate.transform.ResultTransformer;
 import org.hibernate.transform.Transformers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
-import javax.persistence.EntityManager;
-import javax.persistence.NonUniqueResultException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
+import javax.persistence.*;
 import javax.persistence.metamodel.EntityType;
+import javax.persistence.metamodel.Type;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -39,11 +38,12 @@ import java.sql.Connection;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author 佟盟 on 2017/11/15
  */
-public class Dao extends HibernateDaoSupport {
+public class Dao extends HibernateDaoSupport implements BaseDao {
     private static final Map<Class<?>, SimpleJpaRepository> REPOSITORY_CACHE = new HashMap<>();
     private final DbType dbType;
     @PersistenceContext
@@ -118,6 +118,11 @@ public class Dao extends HibernateDaoSupport {
         return sort ? result : -result;
     }
 
+    @Override
+    public DataExtendManager dictionaryManager() {
+        return dictionaryManager;
+    }
+
     /**
      * 根据java类型获取对应的数据库表的JpaRepository对象
      *
@@ -150,29 +155,9 @@ public class Dao extends HibernateDaoSupport {
      *
      * @param o ORM对象
      */
-    public void save(Object o) {
+    @Override
+    public <T> void save(T o) {
         getEntityManager().persist(o);
-    }
-
-    /**
-     * 批量保存
-     *
-     * @param list 表对应的实体类型的对象列表
-     * @param <T>  表对应的实体类型
-     * @return 是否保存成功
-     */
-    @SuppressWarnings("unchecked")
-    public <T> boolean save(Iterable<T> list) {
-        boolean isTrue = false;
-        Iterator<T> iterator = list.iterator();
-        if (iterator.hasNext()) {
-            T obj = iterator.next();
-            Class<T> tClass = (Class<T>) obj.getClass();
-            getRepository(tClass).saveAll(list);
-            isTrue = true;
-
-        }
-        return isTrue;
     }
 
     /**
@@ -184,6 +169,7 @@ public class Dao extends HibernateDaoSupport {
         return getEntityManager().unwrap(SessionImplementor.class).connection();
     }
 
+    @Override
     public <T> boolean contains(T o) {
         return getEntityManager().contains(o);
     }
@@ -195,6 +181,7 @@ public class Dao extends HibernateDaoSupport {
      * @param <T> 泛型
      * @return 被跟踪对象
      */
+    @Override
     public <T> T saveOrUpdate(T o) {
         T e;
         boolean save = true;
@@ -224,6 +211,7 @@ public class Dao extends HibernateDaoSupport {
      * @return 保存后的对象
      */
     @SuppressWarnings("unchecked")
+    @Override
     public <T> T saveAndReturn(T o, boolean isFlush) {
         T e;
         Class<T> clazz = (Class<T>) o.getClass();
@@ -234,46 +222,6 @@ public class Dao extends HibernateDaoSupport {
         }
         dictionaryManager.cover(e);
         return e;
-    }
-
-    /**
-     * 保存
-     *
-     * @param o   要保存的对象
-     * @param <T> 泛型
-     * @return 保存后的对象
-     */
-    public <T> T saveAndReturn(T o) {
-        return saveAndReturn(o, Boolean.FALSE);
-    }
-
-    /**
-     * 批量保存
-     *
-     * @param list 要保存的对象列表
-     * @param <T>  表对应的实体类型
-     * @return 保存后的数据集
-     */
-    @SuppressWarnings("unchecked")
-    public <T> List<T> saveAndReturn(Iterable<T> list) {
-        Iterator<T> iterator = list.iterator();
-        if (iterator.hasNext()) {
-            T obj = iterator.next();
-            Class<T> clazz = (Class<T>) obj.getClass();
-            return getRepository(clazz).saveAll(list);
-        }
-        return new ArrayList<>(0);
-    }
-
-    /**
-     * 根据表实体类型与主键值，判断数据是否存在
-     *
-     * @param tableClass 表对应的实体类型
-     * @param id         数据主键
-     * @return 是否存在
-     */
-    public boolean existsById(Class<?> tableClass, Object id) {
-        return getRepository(tableClass).existsById(toIdType(tableClass, id));
     }
 
     /**
@@ -308,6 +256,7 @@ public class Dao extends HibernateDaoSupport {
      * @param <T> 表对应的实体类型
      * @return 是否更新成功
      */
+    @Override
     public <T> boolean update(T o) {
         Object id = getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(o);
         Object old = getEntityManager().find(o.getClass(), id);
@@ -326,10 +275,10 @@ public class Dao extends HibernateDaoSupport {
      * @param <T> 表映射实体类型的对象
      * @return 返回更新后的数据
      * @throws IdentifierGenerationException 异常
-     * @throws IllegalAccessException        异常
      */
     @SuppressWarnings("unchecked")
-    public <T> T updateOfNotNull(T o) throws IllegalAccessException {
+    @Override
+    public <T> T updateOfNotNull(T o) {
         Object id = getEntityManager().getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(o);
         T old = (T) getEntityManager().find(o.getClass(), id);
         ObjectUtil.copyProperties(o, old, ObjectUtil.Compare.DIFF_SOURCE_NOT_NULL);
@@ -339,97 +288,14 @@ public class Dao extends HibernateDaoSupport {
     }
 
     /**
-     * 根据提供的对象参数，作为例子，查询出结果并删除
-     *
-     * @param o 表实体对象
-     */
-    public <T> void delete(T o) {
-        List<T> list = findAll(o);
-        deleteInBatch(list);
-    }
-
-    /**
-     * 删除
-     *
-     * @param tableClass 查询的目标表对应实体类型，Entity
-     * @param id         删除的主键标识
-     * @param <T>        查询的目标表对应实体类型
-     */
-    public <T> boolean deleteById(Class<T> tableClass, Object id) {
-        try {
-            getRepository(tableClass).deleteById(toIdType(tableClass, id));
-        } catch (EmptyResultDataAccessException ignored) {
-            return false;
-        }
-        return true;
-
-    }
-
-    /**
-     * 删除全部(逐一删除)
-     *
-     * @param tableClass 查询的目标表对应实体类型，Entity
-     * @param <T>        查询的目标表对应实体类型
-     */
-    public <T> void deleteAll(Class<T> tableClass) {
-        getRepository(tableClass).deleteAll();
-    }
-
-    /**
      * 删除全部(一次性删除)
      *
      * @param tableClass 查询的目标表对应实体类型，Entity
      * @param <T>        查询的目标表对应实体类型
      */
+    @Override
     public <T> void deleteAllInBatch(Class<T> tableClass) {
         getRepository(tableClass).deleteAllInBatch();
-    }
-
-    /**
-     * 根据主键与实体类型，部分删除，删除对象集(一次性删除)
-     *
-     * @param tableClass 查询的目标表对应实体类型，Entity
-     * @param <T>        查询的目标表对应实体类型
-     * @param ids        主键数组
-     */
-    public <T> void deleteInBatch(Class<T> tableClass, Object[] ids) {
-        if (ArrayUtils.isEmpty(ids) || ids.length < 1) {
-            return;
-        }
-        SimpleJpaRepository<T, Object> repository = getRepository(tableClass);
-        Class<?> idType = getIdType(tableClass);
-
-        for (Object id : ids) {
-            repository.deleteById(ObjectUtil.to(id, new TypeReference<>(idType)));
-        }
-    }
-
-    public <T> void deleteInBatch(Class<T> tableClass, Iterable<?> ids) {
-        if (ids == null) {
-            return;
-        }
-        SimpleJpaRepository<T, Object> repository = getRepository(tableClass);
-        Class<?> idType = getIdType(tableClass);
-
-        for (Object id : ids) {
-            repository.deleteById(ObjectUtil.to(id, new TypeReference<>(idType)));
-        }
-    }
-
-    /**
-     * 根据表映射类型的对象集合，部分删除，删除对象集(一次性删除)，无返回值
-     *
-     * @param list 需要删除的对象列表
-     * @param <T>  删除对象集合的对象类型，用于生成sql语句时与对应的表进行绑定
-     */
-    public <T> void deleteInBatch(Iterable<T> list) {
-        for (T obj : list) {
-            try {
-                getRepository(obj.getClass()).deleteById(getId(obj));
-            } catch (IdentifierGenerationException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     /**
@@ -440,6 +306,7 @@ public class Dao extends HibernateDaoSupport {
      * @param <T>   查询的目标表对应实体类型
      * @return clazz类型对象
      */
+    @Override
     public <T> T findOne(Class<T> clazz, Object id) {
         T e = getEntityManager().find(clazz, toIdType(clazz, id));
         dictionaryManager.cover(e);
@@ -453,6 +320,7 @@ public class Dao extends HibernateDaoSupport {
      * @param object 查询一句的例子对象
      * @return 返回查询结果
      */
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T findOne(T object) {
         Example<T> example = Example.of(object);
@@ -632,53 +500,41 @@ public class Dao extends HibernateDaoSupport {
      * @return 内容为实体的Page类型分页结果
      */
     public <T> Page<T> pageByClass(Class<T> tableClass, int page, int size) {
-        Page<T> pageInfo = getRepository(tableClass).findAll(PageRequest.of(page - 1, size));
+        return pageByClass(tableClass, PageRequest.of(page - 1, size));
+    }
+
+    /**
+     * 查询指定tableClass对应表的全表分页
+     *
+     * @param tableClass  查询的目标表对应实体类型，Entity
+     * @param pageRequest 分页信息
+     * @param <T>         目标表对应实体类型
+     * @return 内容为实体的Page类型分页结果
+     */
+    public <T> Page<T> pageByClass(Class<T> tableClass, PageRequest pageRequest) {
+        Page<T> pageInfo = getRepository(tableClass).findAll(pageRequest);
         dictionaryManager.cover(pageInfo.getContent());
         return pageInfo;
+    }
+
+    public <T> Page<T> pageBySQL(String sql, int page, int size, Class<T> clazz, Object... parameters) {
+        return pageBySQL(sql, PageRequest.of(page - 1, size, Sort.unsorted()), clazz, parameters);
     }
 
     /**
      * 分页查询
      *
      * @param sql        查询的sql语句
-     * @param page       第几页
-     * @param size       页大小
+     * @param pageable   分页信息
      * @param parameters 对象数组类型的参数集合
      * @return Page类型的查询结果
      */
     @SuppressWarnings("unchecked")
-    public <T> Page<T> pageBySQL(String sql, int page, int size, Class<T> clazz, Object... parameters) {
-        PageImpl<T> pageDate = null;
-        PageRequest pageable;
+    public <T> Page<T> pageBySQL(String sql, PageRequest pageable, Class<T> clazz, Object... parameters) {
+        Page<T> pageDate = Page.empty();
 
-        List<Sort.Order> sorts = Lists.newArrayList();
-
-//        List<SQLSelectOrderByItem> items = SqlUtil.getSort(sql);
-//        if (items != null) {
-//            for (SQLSelectOrderByItem item : items) {
-//                String column = item.getExpr().toString();
-//                if (item.getType() == null) {
-//                    sorts.add(Sort.Order.by(column));
-//                } else {
-//                    Sort.Direction des = Sort.Direction.fromString(item.getType().name_lcase);
-//                    switch (des) {
-//                        case ASC:
-//                            sorts.add(Sort.Order.asc(column));
-//                            break;
-//                        case DESC:
-//                            sorts.add(Sort.Order.desc(column));
-//                            break;
-//                        default:
-//                    }
-//                }
-//            }
-//        }
-
-        if (!sorts.isEmpty()) {
-            pageable = PageRequest.of(page - 1, size, Sort.by(sorts));
-        } else {
-            pageable = PageRequest.of(page - 1, size, Sort.unsorted());
-        }
+        int page = pageable.getPageNumber();
+        int size = pageable.getPageSize();
 
         Query countQuery = creatQuery(true, sql, parameters);
         int count = Integer.parseInt(countQuery.getSingleResult().toString());
@@ -687,10 +543,10 @@ public class Dao extends HibernateDaoSupport {
         if (count >= 0) {
             List<T> content;
             if (clazz != null) {
-                content = findBySQL(sql, clazz, (page - 1) * size, size, parameters);
+                content = findBySQL(sql, clazz, page * size, size, parameters);
             } else {
                 Query query = creatQuery(false, sql, parameters);
-                query.setFirstResult((page - 1) * size);
+                query.setFirstResult(page * size);
                 query.setMaxResults(size);
                 queryCoverMap(query);
                 content = query.getResultList();
@@ -831,7 +687,7 @@ public class Dao extends HibernateDaoSupport {
      * @return 主键属性
      * @throws IdentifierGenerationException tableClass实体类型中没有找到@ID的注解，识别成主键字段
      */
-    private Field getIdField(Class<?> clazz) {
+    public Field getIdField(Class<?> clazz) {
         final EntityType<?> entityInfo = getEntityManager().getMetamodel().entity(clazz);
         return ClassInfo.getCache(clazz).getField(entityInfo.getId(entityInfo.getIdType().getJavaType()).getName());
     }
@@ -854,7 +710,7 @@ public class Dao extends HibernateDaoSupport {
      * @param clazz 主键java类型
      * @return 主键java类型
      */
-    private Class<?> getIdType(Class<?> clazz) {
+    public Class<?> getIdType(Class<?> clazz) {
         return getEntityManager().getMetamodel().entity(clazz).getIdType().getJavaType();
     }
 
@@ -865,8 +721,35 @@ public class Dao extends HibernateDaoSupport {
      * @param id    主键
      * @return 转换后的主键
      */
-    private Object toIdType(Class<?> clazz, Object id) {
+    public Object toIdType(Class<?> clazz, Object id) {
         return ObjectUtil.to(id, new TypeReference<>(getIdType(clazz)));
+    }
+
+    @Override
+    public <T> List<ColumnName> toColumnNames(Class<T> tableClass) {
+        return ClassUtil.getAllEntityAnnotation(tableClass, Column.class).stream().map(f -> {
+            ColumnName columnName = new ColumnName();
+
+            Column annotation = f.getAnnotation();
+            String name = annotation.name();
+
+            if (!StringUtil.isEmpty(name)) {
+                columnName.setName(name);
+            }
+
+            columnName.setMember(f.getMember());
+
+            //设置主键
+            Id id = ClassUtil.getFieldAnnotation(tableClass, columnName.getName(), Id.class);
+            columnName.setPrimaryKey(id != null);
+            return columnName;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public <T> String toTableName(Class<T> tableClass) {
+        Table document = tableClass.getAnnotation(Table.class);
+        return document.name();
     }
 
     private void queryCoverMap(Query query) {
@@ -961,20 +844,6 @@ public class Dao extends HibernateDaoSupport {
      * 根据实体类型tableClass与主键值集合ids，查询实体列表
      *
      * @param tableClass 查询的目标表对应实体类型，Entity
-     * @param ids        主键值集合
-     * @param <T>        目标表对应实体类型
-     * @return 返回查询出的实体列表
-     */
-    public <T> List<T> findAllById(Class<T> tableClass, Iterable<?> ids) {
-        List<T> result = getRepository(tableClass).findAllById((Iterable<Object>) ids);
-        dictionaryManager.cover(result);
-        return result;
-    }
-
-    /**
-     * 根据实体类型tableClass与主键值集合ids，查询实体列表
-     *
-     * @param tableClass 查询的目标表对应实体类型，Entity
      * @param ids        主键值集合，数组类型
      * @param <T>        目标表对应实体类型
      * @return 返回查询出的实体列表
@@ -1030,7 +899,7 @@ public class Dao extends HibernateDaoSupport {
      * @param list      要保存的数据集合
      * @param batchSize 多少条执行一次插入
      */
-    public void batchInsert(List<Object> list, int batchSize) {
+    public <T> void batchInsert(List<T> list, int batchSize) {
         try {
             if (batchSize <= 0) {
                 for (Object o : list) {
@@ -1059,7 +928,7 @@ public class Dao extends HibernateDaoSupport {
      * @param list      要更新的数据集合
      * @param batchSize 多少条执行一次更新
      */
-    public void batchUpdate(List<Object> list, int batchSize) {
+    public <T> void batchUpdate(List<T> list, int batchSize) {
         try {
             if (batchSize <= 0) {
                 for (Object o : list) {
@@ -1088,7 +957,7 @@ public class Dao extends HibernateDaoSupport {
      * @param list      要删除的数据集合
      * @param batchSize 多少条执行一次删除
      */
-    public void batchDelete(List<Object> list, int batchSize) {
+    public <T> void batchDelete(List<T> list, int batchSize) {
         try {
             if (batchSize <= 0) {
                 for (Object o : list) {
@@ -1111,4 +980,14 @@ public class Dao extends HibernateDaoSupport {
         }
     }
 
+    public Class<?> getEntityType(String model) {
+        Optional<EntityType<?>> entityType = getEntityManager().getEntityManagerFactory()
+                .getMetamodel()
+                .getEntities()
+                .stream()
+                .filter(n -> n.getName().equalsIgnoreCase(StringUtil.toUpperName(model)))
+                .findFirst();
+
+        return entityType.<Class<?>>map(Type::getJavaType).orElse(null);
+    }
 }
