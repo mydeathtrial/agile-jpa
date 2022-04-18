@@ -16,6 +16,7 @@ import com.querydsl.sql.MySQLTemplates;
 import com.querydsl.sql.SQLBindings;
 import com.querydsl.sql.SQLQuery;
 import lombok.SneakyThrows;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,7 +71,10 @@ public class TestTask {
     @Test
     @Transactional
     public void delete() {
-        dao.delete(create());
+        add();
+        dao.delete(SysApiEntity.builder().name("asd").build());
+        List<?> all = dao.findAll(SysApiEntity.builder().name("asd").build());
+        Assert.assertTrue(all.isEmpty());
     }
 
     @Test

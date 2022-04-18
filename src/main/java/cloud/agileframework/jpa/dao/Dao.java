@@ -22,11 +22,25 @@ import org.hibernate.transform.ResultTransformer;
 import org.hibernate.transform.Transformers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.support.JpaEntityInformation;
+import org.springframework.data.jpa.repository.support.JpaEntityInformationSupport;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.util.ProxyUtils;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.EntityManager;
+import javax.persistence.NonUniqueResultException;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.persistence.Table;
 import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.Type;
 import java.lang.reflect.Field;
@@ -37,7 +51,14 @@ import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -45,6 +66,7 @@ import java.util.stream.Collectors;
  */
 public class Dao extends HibernateDaoSupport implements BaseDao {
     private static final Map<Class<?>, SimpleJpaRepository> REPOSITORY_CACHE = new HashMap<>();
+    private static final Map<Class<?>, JpaEntityInformation<?, ?>> ENTITYINFORMATION_CACHE = new HashMap<>();
     private final DbType dbType;
     @PersistenceContext
     private EntityManager entityManager;
@@ -135,8 +157,10 @@ public class Dao extends HibernateDaoSupport implements BaseDao {
     public <T, ID> SimpleJpaRepository<T, ID> getRepository(Class<T> tableClass) {
         SimpleJpaRepository<T, ID> repository = REPOSITORY_CACHE.get(tableClass);
         if (ObjectUtils.isEmpty(repository)) {
-            repository = new SimpleJpaRepository<>(tableClass, getEntityManager());
+            JpaEntityInformation<T, ?> entityInformation = JpaEntityInformationSupport.getEntityInformation(tableClass, getEntityManager());
+            repository = new SimpleJpaRepository<>(entityInformation, getEntityManager());
             REPOSITORY_CACHE.put(tableClass, repository);
+            ENTITYINFORMATION_CACHE.put(tableClass, entityInformation);
         }
         return repository;
     }
@@ -989,5 +1013,10 @@ public class Dao extends HibernateDaoSupport implements BaseDao {
                 .findFirst();
 
         return entityType.<Class<?>>map(Type::getJavaType).orElse(null);
+    }
+
+    @Override
+    public <T> void delete(T entity) {
+        updateBySQL(toDeleteSql(entity,dbType));
     }
 }

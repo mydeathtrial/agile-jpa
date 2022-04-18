@@ -4,7 +4,7 @@ spring:
         path: /h2-console
         enabled: true
   jpa:
-    show-sql: false
+    show-sql: true
     database: h2
     database-platform: org.hibernate.dialect.H2Dialect
     properties:
