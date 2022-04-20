@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.Query;
 import java.lang.reflect.Method;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -163,6 +164,7 @@ public class TestTask {
         entity.setName("asd");
         entity.setId(IdUtil.generatorIdToString());
         entity.setType(false);
+        entity.setNow(new Date());
         return entity;
     }
 
@@ -209,6 +211,7 @@ public class TestTask {
                 "    BUSINESS_CODE VARCHAR2,\n" +
                 "    REMARKS       TEXT,\n" +
                 "    TYPE          VARCHAR,\n" +
+                "    NOW          DATETIME,\n" +
                 "    constraint SYS_API_PK\n" +
                 "        primary key (SYS_API_ID)\n" +
                 ")");

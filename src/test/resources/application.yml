@@ -9,8 +9,9 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     properties:
         hibernate:
-            dialect: org.hibernate.dialect.H2Dialect
-            use_jdbc_metadata_defaults : false
+          dialect: org.hibernate.dialect.H2Dialect
+          use_jdbc_metadata_defaults : false
+          show_sql: true
   datasource:
     # 使用阿里的Druid连接池
     #    driver-class-name: com.mysql.cj.jdbc.Driver

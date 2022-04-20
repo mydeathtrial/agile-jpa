@@ -10,6 +10,7 @@ import org.hibernate.Hibernate;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Objects;
 
 /**
@@ -34,6 +35,7 @@ public class SysApiEntity extends BaseEntity implements Serializable {
     private String businessName;
     private String businessCode;
     private String remarks;
+    private Date now;
 
     @Column(name = "name", length = 65535)
     @Basic
@@ -63,6 +65,12 @@ public class SysApiEntity extends BaseEntity implements Serializable {
     @Column(name = "remarks", length = 255)
     public String getRemarks() {
         return remarks;
+    }
+
+    @Basic
+    @Column(name = "now")
+    public Date getNow() {
+        return now;
     }
 
     @Transient
