@@ -200,8 +200,8 @@ public class TestTask {
         System.out.println(bindings.getSQL());
         System.out.println(bindings.getNullFriendlyBindings());
     }
-
-    @Before
+    
+//    @Before
     public void before(){
         dao.updateBySQL("drop table if exists SYS_API;"+"create table SYS_API\n" +
                 "(\n" +
@@ -215,5 +215,9 @@ public class TestTask {
                 "    constraint SYS_API_PK\n" +
                 "        primary key (SYS_API_ID)\n" +
                 ")");
+    }
+    @Test
+    public void query5(){
+        dao.findAll(SysApiEntity.builder().name("asd").build());
     }
 }
