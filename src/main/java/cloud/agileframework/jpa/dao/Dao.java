@@ -31,8 +31,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.JpaEntityInformationSupport;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.data.util.ProxyUtils;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
 
 import javax.persistence.Column;
@@ -1017,6 +1015,6 @@ public class Dao extends HibernateDaoSupport implements BaseDao {
 
     @Override
     public <T> void delete(T entity) {
-        updateBySQL(toDeleteSql(entity,dbType));
+        updateBySQL(toDeleteSql(entity, dbType));
     }
 }

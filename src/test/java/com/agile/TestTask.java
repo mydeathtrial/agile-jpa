@@ -4,12 +4,10 @@ import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.dictionary.DictionaryDataManager;
 import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.spring.util.IdUtil;
-import com.agile.mvc.entity.BaseEntity;
 import com.agile.mvc.entity.MyEntityPathBase;
 import com.agile.mvc.entity.SysApiEntity;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
-import com.querydsl.core.types.dsl.DslPath;
 import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.querydsl.sql.MySQLTemplates;
@@ -28,7 +26,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.Query;
 import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.HashMap;
@@ -200,10 +197,10 @@ public class TestTask {
         System.out.println(bindings.getSQL());
         System.out.println(bindings.getNullFriendlyBindings());
     }
-    
-//    @Before
-    public void before(){
-        dao.updateBySQL("drop table if exists SYS_API;"+"create table SYS_API\n" +
+
+    //    @Before
+    public void before() {
+        dao.updateBySQL("drop table if exists SYS_API;" + "create table SYS_API\n" +
                 "(\n" +
                 "    SYS_API_ID    VARCHAR2 not null,\n" +
                 "    NAME          VARCHAR2,\n" +
@@ -216,8 +213,9 @@ public class TestTask {
                 "        primary key (SYS_API_ID)\n" +
                 ")");
     }
+
     @Test
-    public void query5(){
+    public void query5() {
         dao.findAll(SysApiEntity.builder().name("asd").build());
     }
 }

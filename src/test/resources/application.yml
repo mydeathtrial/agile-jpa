@@ -1,17 +1,17 @@
 spring:
   h2:
     console:
-        path: /h2-console
-        enabled: true
+      path: /h2-console
+      enabled: true
   jpa:
     show-sql: true
     database: h2
     database-platform: org.hibernate.dialect.H2Dialect
     properties:
-        hibernate:
-          dialect: org.hibernate.dialect.H2Dialect
-          use_jdbc_metadata_defaults : false
-          show_sql: true
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        use_jdbc_metadata_defaults: false
+        show_sql: true
   datasource:
     # 使用阿里的Druid连接池
     #    driver-class-name: com.mysql.cj.jdbc.Driver
@@ -21,7 +21,7 @@ spring:
     password: 123456
     type: com.zaxxer.hikari.HikariDataSource
     # 使用阿里的Druid连接池
-#     type: com.alibaba.druid.pool.DruidDataSource
+    #     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: org.h2.Driver
 #     druid:
 #       # 连接池的配置信息
