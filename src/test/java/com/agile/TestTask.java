@@ -4,15 +4,9 @@ import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.dictionary.DictionaryDataManager;
 import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.spring.util.IdUtil;
-import com.agile.mvc.entity.MyEntityPathBase;
 import com.agile.mvc.entity.SysApiEntity;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
-import com.querydsl.core.types.dsl.PathBuilder;
-import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.querydsl.sql.MySQLTemplates;
-import com.querydsl.sql.SQLBindings;
-import com.querydsl.sql.SQLQuery;
 import lombok.SneakyThrows;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,7 +25,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 
 /**
@@ -165,38 +158,38 @@ public class TestTask {
         return entity;
     }
 
-    @Test
-    @Transactional
-    public void query4() {
-        IntStream.range(0, 100).forEach(a -> {
-            SysApiEntity entity = new SysApiEntity();
-            entity.setBusinessCode("asd" + a);
-            entity.setName("asd" + a);
-            entity.setId(IdUtil.generatorIdToString());
-            entity.setType(false);
-            dao.save(entity);
-        });
-//        QBaseEntity baseEntity = QBaseEntity.baseEntity;
-//        QSysApiEntity sysApiEntity = QSysApiEntity.sysApiEntity;
-        JPAQueryFactory queryFactory = new JPAQueryFactory(dao.getEntityManager());
-//        queryFactory.selectFrom(sysApiEntity)
-//                .where(
-//                        sysApiEntity.id.like("%1")
-//                ).fetch();
-
-        MyEntityPathBase<SysApiEntity> e = new MyEntityPathBase<>(SysApiEntity.class, "a");
-        List<Object> one = queryFactory.select(new PathBuilder<>(Object.class, "a").get("name")).from(e).where(e.createString("id").eq("1")).fetch();
-
-        final SQLQuery<Object> sqlQuery = new SQLQuery<>(MySQLTemplates.DEFAULT);
-        PathBuilder<Object> pathBuilder = new PathBuilder<>(Object.class, "person");
-        sqlQuery.select(pathBuilder.get("name"))
-                .from(pathBuilder.getRoot())
-                .where(pathBuilder.get("idnumber")
-                        .in("a", "b", "c")).offset(5).limit(10);
-        final SQLBindings bindings = sqlQuery.getSQL();
-        System.out.println(bindings.getSQL());
-        System.out.println(bindings.getNullFriendlyBindings());
-    }
+//    @Test
+//    @Transactional
+//    public void query4() {
+//        IntStream.range(0, 100).forEach(a -> {
+//            SysApiEntity entity = new SysApiEntity();
+//            entity.setBusinessCode("asd" + a);
+//            entity.setName("asd" + a);
+//            entity.setId(IdUtil.generatorIdToString());
+//            entity.setType(false);
+//            dao.save(entity);
+//        });
+////        QBaseEntity baseEntity = QBaseEntity.baseEntity;
+////        QSysApiEntity sysApiEntity = QSysApiEntity.sysApiEntity;
+//        JPAQueryFactory queryFactory = new JPAQueryFactory(dao.getEntityManager());
+////        queryFactory.selectFrom(sysApiEntity)
+////                .where(
+////                        sysApiEntity.id.like("%1")
+////                ).fetch();
+//
+//        MyEntityPathBase<SysApiEntity> e = new MyEntityPathBase<>(SysApiEntity.class, "a");
+//        List<Object> one = queryFactory.select(new PathBuilder<>(Object.class, "a").get("name")).from(e).where(e.createString("id").eq("1")).fetch();
+//
+//        final SQLQuery<Object> sqlQuery = new SQLQuery<>(MySQLTemplates.DEFAULT);
+//        PathBuilder<Object> pathBuilder = new PathBuilder<>(Object.class, "person");
+//        sqlQuery.select(pathBuilder.get("name"))
+//                .from(pathBuilder.getRoot())
+//                .where(pathBuilder.get("idnumber")
+//                        .in("a", "b", "c")).offset(5).limit(10);
+//        final SQLBindings bindings = sqlQuery.getSQL();
+//        System.out.println(bindings.getSQL());
+//        System.out.println(bindings.getNullFriendlyBindings());
+//    }
 
     //    @Before
     public void before() {
