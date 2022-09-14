@@ -1,5 +1,6 @@
 package cloud.agileframework.jpa.dao;
 
+import cloud.agileframework.common.DataException;
 import cloud.agileframework.common.util.clazz.ClassInfo;
 import cloud.agileframework.common.util.clazz.ClassUtil;
 import cloud.agileframework.common.util.clazz.TypeReference;
@@ -13,10 +14,8 @@ import cloud.agileframework.sql.SqlUtil;
 import com.alibaba.druid.DbType;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import lombok.SneakyThrows;
 import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.id.IdentifierGenerationException;
 import org.hibernate.query.internal.NativeQueryImpl;
 import org.hibernate.transform.ResultTransformer;
 import org.hibernate.transform.Transformers;
@@ -111,29 +110,30 @@ public class Dao extends HibernateDaoSupport implements BaseDao {
             return;
         }
         list.sort((o1, o2) -> {
-            try {
-                for (SortInfo sort : sortInfos) {
-                    final String property = sort.getProperty();
-                    int v = compare(o1, o2, property, sort.isSort());
-                    if (v != 0) {
-                        break;
-                    }
+            for (SortInfo sort : sortInfos) {
+                final String property = sort.getProperty();
+                int v = compare(o1, o2, property, sort.isSort());
+                if (v != 0) {
+                    break;
                 }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
             }
+            
             return 0;
         });
     }
 
-    private static <T> int compare(T o1, T o2, String property, boolean sort) throws IllegalAccessException {
-        int result = 0;
+    private static <T> int compare(T o1, T o2, String property, boolean sort) {
+        int result;
         if (Map.class.isAssignableFrom(o1.getClass())) {
             result = String.valueOf(((Map) o1).get(property)).compareTo(String.valueOf(((Map) o2).get(property)));
         } else {
-            Class<?> clazz = o1.getClass();
-            Field field = ClassInfo.getCache(clazz).getField(property);
-            result = String.valueOf(field.get(o1)).compareTo(String.valueOf(field.get(o2)));
+            try {
+                Class<?> clazz = o1.getClass();
+                Field field = ClassInfo.getCache(clazz).getField(property);
+                result = String.valueOf(field.get(o1)).compareTo(String.valueOf(field.get(o2)));
+            } catch (IllegalAccessException e) {
+                throw new DataException(e);
+            }
         }
         return sort ? result : -result;
     }
@@ -296,7 +296,6 @@ public class Dao extends HibernateDaoSupport implements BaseDao {
      * @param o   表映射实体类型的对象
      * @param <T> 表映射实体类型的对象
      * @return 返回更新后的数据
-     * @throws IdentifierGenerationException 异常
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -684,9 +683,8 @@ public class Dao extends HibernateDaoSupport implements BaseDao {
      * @param <T>        查询的目标表对应实体类型
      * @param <ID>       查询的目标表对应实体主键类型
      * @return 结果集
-     * @throws IdentifierGenerationException tableClass实体类型中没有找到@ID的注解，识别成主键字段
      */
-    private <T, ID> List<T> createObjectList(Class<T> tableClass, ID[] ids) throws IdentifierGenerationException {
+    private <T, ID> List<T> createObjectList(Class<T> tableClass, ID[] ids) {
         ArrayList<T> list = new ArrayList<>();
         Field idField = getIdField(tableClass);
         for (ID id : ids) {
@@ -696,7 +694,7 @@ public class Dao extends HibernateDaoSupport implements BaseDao {
                 idField.set(instance, ObjectUtil.to(id, new TypeReference<>(idField.getType())));
                 list.add(instance);
             } catch (IllegalAccessException | InstantiationException e) {
-                logger.error("主键数组转换ORM对象列表失败", e);
+                throw new DataException("主键数组转换ORM对象列表失败", e);
             }
         }
         return list;
@@ -707,23 +705,28 @@ public class Dao extends HibernateDaoSupport implements BaseDao {
      *
      * @param clazz 查询的目标表对应实体类型，Entity
      * @return 主键属性
-     * @throws IdentifierGenerationException tableClass实体类型中没有找到@ID的注解，识别成主键字段
      */
     public Field getIdField(Class<?> clazz) {
         final EntityType<?> entityInfo = getEntityManager().getMetamodel().entity(clazz);
         return ClassInfo.getCache(clazz).getField(entityInfo.getId(entityInfo.getIdType().getJavaType()).getName());
     }
 
-    @SneakyThrows
     public Object getId(Object o) {
-        return getIdField(o.getClass()).get(o);
+        try {
+            return getIdField(o.getClass()).get(o);
+        } catch (IllegalAccessException e) {
+            throw new DataException(e);
+        }
     }
 
-    @SneakyThrows
     public void setId(Object o, Object id) {
-        final Field idField = getIdField(o.getClass());
-        idField.setAccessible(true);
-        idField.set(o, id);
+        try {
+            final Field idField = getIdField(o.getClass());
+            idField.setAccessible(true);
+            idField.set(o, id);
+        } catch (IllegalAccessException e) {
+            throw new DataException(e);
+        }
     }
 
     /**

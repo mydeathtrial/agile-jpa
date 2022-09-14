@@ -2,6 +2,7 @@ package com.agile;
 
 import cloud.agileframework.dictionary.DictionaryDataBase;
 import cloud.agileframework.dictionary.DictionaryDataManager;
+import cloud.agileframework.dictionary.util.TranslateException;
 import cloud.agileframework.jpa.dao.Dao;
 import cloud.agileframework.spring.util.IdUtil;
 import com.agile.mvc.entity.SysApiEntity;
