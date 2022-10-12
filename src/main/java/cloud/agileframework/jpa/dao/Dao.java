@@ -50,7 +50,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -117,7 +116,7 @@ public class Dao extends HibernateDaoSupport implements BaseDao {
                     break;
                 }
             }
-            
+
             return 0;
         });
     }
@@ -806,27 +805,31 @@ public class Dao extends HibernateDaoSupport implements BaseDao {
 
         if (parameters.length == 1) {
             Object p = parameters[0];
-            if (canCastClass(p.getClass()) || p instanceof Collection) {
+            if (sql.contains("?")) {
                 query = getEntityManager().createNativeQuery(sql);
-                query.setParameter(0, p);
+                int size = query.getParameters().size();
+                if (size == 1) {
+                    query.setParameter(0, p);
+                    return query;
+                } else if (size > 1) {
+                    throw new DataException("You used multiple hibernate value, but only provided one parameter");
+                }
+            }
+
+            Map<String, Object> map = Maps.newHashMap();
+
+            if (isCount) {
+                sql = SqlUtil.parserCountSQLByType(dbType, sql, p, map);
             } else {
-                Map<String, Object> map = Maps.newHashMap();
-
-                if (isCount) {
-                    sql = SqlUtil.parserCountSQLByType(dbType, sql, p, map);
-                } else {
-                    sql = SqlUtil.parserSQLByType(dbType, sql, p, map);
+                sql = SqlUtil.parserSQLByType(dbType, sql, p, map);
+            }
+            query = getEntityManager().createNativeQuery(sql);
+            try {
+                for (Map.Entry<String, Object> e : map.entrySet()) {
+                    query.setParameter(Integer.parseInt(e.getKey()), e.getValue());
                 }
-                query = getEntityManager().createNativeQuery(sql);
-                try {
-                    for (Map.Entry<String, Object> e : map.entrySet()) {
-                        query.setParameter(Integer.parseInt(e.getKey()), e.getValue());
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(sql, e);
-                }
-
-
+            } catch (Exception e) {
+                throw new RuntimeException(sql, e);
             }
         } else {
             if (isCount) {
